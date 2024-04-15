@@ -1,0 +1,1874 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import numpy as np
+import scipy.io as sio
+import pandas as pd
+import  pickle
+import matplotlib.pyplot as plt
+from scipy.integrate import trapz
+from scipy.spatial.distance import cdist
+from scipy.io import loadmat
+from scipy.special import erfc
+from datetime import datetime
+from dateutil.parser import parse
+from datetime import datetime, timedelta
+from decimal import Decimal, getcontext
+import math
+np.random.seed(30)
+pause = int(32) # just for debugging purposes
+# 1. load meteorological forcing data from EC station
+
+
+# In[2]:
+
+
+get_ipython().system('pip install seaborn')
+
+
+# In[3]:
+
+
+get_ipython().system('pip install matplotlib')
+
+
+# In[4]:
+
+
+get_ipython().system('pip install flake8')
+
+
+# In[5]:
+
+
+get_ipython().run_cell_magic('capture', '', '!pip install black\n')
+
+
+# In[6]:
+
+
+import seaborn as sns
+sns.set(style="whitegrid")
+
+
+# In[7]:
+
+
+np.random.seed(30)
+pause = int(32) # just for debugging purposes
+# 1. load meteorological forcing data from EC station
+getcontext().prec = 20
+
+
+# In[8]:
+
+
+#you can use the pickle for loading your data
+
+# with open(r'C:\Users\negar_hofism7\OneDrive\Desktop\MyAPP\mypackage\data\Phoenix_calibrate_Pre3.pkl', 'rb') as file:
+#     data1 = pickle.load(file)
+# HG_UCM = data1['HG_UCM']
+# HR_UCM = data1['HR_UCM']
+# H_UCM = data1['H_UCM']
+# IRRI_UCM = data1['IRRI_UCM']
+# LEG_UCM = data1['LEG_UCM']
+# LE_UCM = data1['LE_UCM']
+# TGe_UCM = data1['TGe_UCM']
+# TRe_UCM = data1['TRe_UCM']
+# Tcan_UCM = data1['Tcan_UCM']
+# Ts_UCM = data1['Ts_UCM']
+
+# with open(r'C:\Users\negar_hofism7\OneDrive\Desktop\MyAPP\mypackage\data\Phoenix_irri_2012.pkl', 'rb') as file:
+#     data2 = pickle.load(file)
+# LWDEC = data2['LWDEC']
+# SWDEC = data2['SWDEC']
+# LWUEC = data2['LWUEC']
+# SWUEC = data2['SWUEC']
+# HEC = data2['HEC']
+# LEEC = data2['LEEC']
+# TaEC = data2['TaEC']
+# TsEC = data2['TsEC']
+# uEC = data2['uEC']
+# pEC = data2['pEC']
+# SMEC = data2['SMEC']
+# SMEC2 = data2['SMEC2']
+# SMEC3 = data2['SMEC3']
+# raEC = data2['raEC']
+# PEC = data2['PEC']
+# qaEC = data2['qaEC']
+# tEC = data2['tEC']
+# RHEC = data2['RHEC'] 
+
+# with open(r'C:\Users\negar_hofism7\OneDrive\Desktop\MyAPP\mypackage\data\Irri_input.pkl', 'rb') as file:
+#     data3 = pickle.load(file)
+# qa_in = data3['qa_in']
+# Pa_in = data3['Pa_in']
+# LD_in = data3['LD_in']
+# SD_in = data3['SD_in']
+# Ta_in = data3['Ta_in']
+# ra_in = data3['ra_in']
+# Ua_in = data3['Ua_in']
+# pd_in = data3['pd_in']
+
+# with open(r'C:\Users\negar_hofism7\OneDrive\Desktop\MyAPP\mypackage\data\Phoenix_UCM1.pkl', 'rb') as file:
+#     data4 = pickle.load(file)
+# WG_UCM = data4['WG_UCM']
+# WR_UCM = data4['WR_UCM']
+# LER_UCM = data4['LER_UCM']
+# LW_UCM = data4['LW_UCM']
+# TG_UCM = data4['TG_UCM']
+# TR_UCM = data4['TR_UCM']
+# Tcan_UCM = data4['Tcan_UCM']
+
+# with open(r'C:\Users\negar_hofism7\OneDrive\Desktop\MyAPP\mypackage\data\Phoenix_UCM2.pkl', 'rb') as file:
+#     data5 = pickle.load(file)
+# #TWd = data5['TWd']
+# #WRv = data5['WRv']
+# #WGv = data5['WGv']
+# ReR = data5['ReR']
+# Tcan = data5['Tcan']
+# Ta = data5['Ta']
+# TR = data5['TR']
+# RnR_UCM = data5['RnR_UCM']
+# Hu = data5['Hu']
+# LEu = data5['LEu']
+# qcan = data5['qcan']
+
+
+# In[9]:
+
+
+#you can use the loadmat for loading your data regarding your directory
+data = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Phoenix Validation\Phoenix_calibrate_Pre3.mat')
+Phoenix_calibrate_Pre3 = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Phoenix Validation\Phoenix_calibrate_Pre3.mat')
+Phoenix_irri_2012 = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Phoenix Validation\Phoenix_irri_2012.mat')
+Phoenix_calibrate_Final = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Phoenix Validation\Phoenix_irri_2012.mat')
+irri_input = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Phoenix Validation\Irri_input.mat')
+Phoenix_UCM1 = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Variables\Phoenix_UCM1.mat')
+Phoenix_UCM2 = sio.loadmat(r'C:\Users\negar_hofism7\Downloads\Phoenix Validation\Variables\Phoenix_UCM2.mat')
+Hu = Phoenix_UCM2['Hu']
+LEu = Phoenix_UCM2['LEu']
+qcan = Phoenix_UCM2['qcan']
+ReR = Phoenix_UCM2['ReR']
+TR = Phoenix_UCM2['TR']
+Tcan = Phoenix_UCM2['Tcan']
+Ta = Phoenix_UCM2['Ta']
+RnR_UCM = Phoenix_UCM2['RnR_UCM']
+TR_UCM = Phoenix_UCM1['TR_UCM']
+TG_UCM = Phoenix_UCM1['TG_UCM']
+LER_UCM = Phoenix_UCM1['LER_UCM']
+LW_UCM = Phoenix_UCM1['LW_UCM']
+Tcan_UCM = Phoenix_UCM1['Tcan_UCM']
+WG_UCM = Phoenix_UCM1['WG_UCM']
+WR_UCM = Phoenix_UCM1['WR_UCM']
+TWd = Phoenix_UCM1['TWd']
+WGv = Phoenix_UCM1['WGv']
+WRv = Phoenix_UCM1['WRv']
+LWDEC = Phoenix_irri_2012['LWDEC']
+SWDEC = Phoenix_irri_2012['SWDEC']
+LWUEC = Phoenix_irri_2012['LWUEC']
+SWUEC = Phoenix_irri_2012['SWUEC']
+HEC = Phoenix_irri_2012['HEC']
+LEEC = Phoenix_irri_2012['LEEC']
+TaEC = Phoenix_irri_2012['TaEC']
+TsEC = Phoenix_irri_2012['TsEC']
+uEC = Phoenix_irri_2012['uEC']
+pEC = Phoenix_irri_2012['pEC']
+SMEC = Phoenix_irri_2012['SMEC']
+SMEC2 = Phoenix_irri_2012['SMEC2']
+SMEC3 = Phoenix_irri_2012['SMEC3']
+raEC = Phoenix_irri_2012['raEC']
+PEC = Phoenix_irri_2012['PEC']
+qaEC = Phoenix_irri_2012['qaEC']
+tEC = Phoenix_irri_2012['tEC']
+RHEC = Phoenix_irri_2012['RHEC']
+HG_UCM = Phoenix_calibrate_Pre3['HG_UCM']
+HR_UCM = Phoenix_calibrate_Pre3['HR_UCM']
+H_UCM = Phoenix_calibrate_Pre3['H_UCM']
+IRRI_UCM = Phoenix_calibrate_Pre3['IRRI_UCM']
+LEG_UCM = Phoenix_calibrate_Pre3['LEG_UCM']
+LE_UCM = Phoenix_calibrate_Pre3['LE_UCM']
+TGe_UCM = Phoenix_calibrate_Pre3['TGe_UCM']
+TRe_UCM = Phoenix_calibrate_Pre3['TRe_UCM']
+Tcan_UCM = Phoenix_calibrate_Pre3['Tcan_UCM']
+Ts_UCM = Phoenix_calibrate_Pre3['Ts_UCM']
+#TRe_UCM = Phoenix_calibrate_Final['TRe_UCM']
+#TGe_UCM = Phoenix_calibrate_Final['TGe_UCM']
+#H_UCM = Phoenix_calibrate_Final['H_UCM']
+#LE_UCM = Phoenix_calibrate_Final['LE_UCM']
+#HG_UCM = Phoenix_calibrate_Final['HG_UCM']
+#LEG_UCM = Phoenix_calibrate_Final['LEG_UCM']
+#Tcan_UCM = Phoenix_calibrate_Final['Tcan_UCM']
+#IRRI_UCM = Phoenix_calibrate_Final['IRRI_UCM']
+#Ts_UCM = Phoenix_calibrate_Final['Ts_UCM']
+qa_in = irri_input['qa_in']
+Pa_in = irri_input['Pa_in']
+LD_in = irri_input['LD_in']
+SD_in = irri_input['SD_in']
+Ta_in = irri_input['Ta_in']
+ra_in = irri_input['ra_in']
+Ua_in = irri_input['Ua_in']
+pd_in = irri_input['pd_in']
+Nd = 3
+ny = 48 * Nd
+npp = 288 * Nd
+nd = 366                             # number of days with re-initialization
+tm = (tEC-tEC[0])*24                # adjust time format for EC data
+nnd = math.floor(nd / Nd)
+ty = np.arange(1, nd+1, Nd)
+
+
+# In[10]:
+
+
+# Canyon dimensions with partitioned facets
+TB = 24  # building temperature [oC]
+nR = 2  # roof types: normal||green
+nW = 2  # wall types: brick||glass
+nG = 3  # ground types: asphalt||concrete||vegetated
+
+fR = [1.0, 0]  # fraction for each type of roof
+fW = [1.0, 0]  # fraction for each type of wall
+fG = [0.65, 0, 0.35]  # fraction for each type of ground
+
+Za = 21.95  # reference height [m]
+Zr = 4.5  # roof level (building height)[m]
+r = 0.5  # normalized roof width
+w = 1 - r  # normalized road width
+h = 0.20  # normalized building height
+
+ZmR = 0.005  # momentum roughness length above roof [m]
+Zmc = 0.05  # momentum roughness length above canyon [m]
+ZhR = ZmR / 10  # heat roughness length above roof [m]
+Zhc = Zmc / 10  # heat roughness length above canyon [m]
+
+
+# In[125]:
+
+
+# Canyon orientation and location ! don't change
+qc = np.pi / 8  # canyon orientation [rad]
+Lat = 34.419939  # Latitude (positive north)
+Lon = 111.931380  # Longitude (postive west)
+phi = Lat * np.pi / 180  # latitude positive north [rad]
+lam = Lon * np.pi / 180  # longitude positive west [rad]
+
+# Surface thermal properties: 2nd roof properties are of green roof
+aR = np.array([0.10, 0.20])  # roof surface albedo
+aW = np.array([0.17, 0.20])  # wall surface albedo
+aG = np.array([0.17, 0.40, 0.15])  # ground surface albedo
+
+eR = np.array([0.95, 0.93])  # roof surface emissivity
+eW = np.array([0.95, 0.95])  # wall surface emissivity
+eG = np.array([0.95, 0.98, 0.93])  # ground surface emissivity
+
+# Modified as three-layer composite roof
+dR = np.array([[0.1, 0.1, 0.1]])  # thickness of conventional roof
+dG = np.array([[0.1, 0.15, 0.2]]) # thickness of green roof
+dW = np.array([[0.06, 0.06], [0.06, 0.06], [0.06, 0.06]])  # partition of wall layer
+
+
+# In[12]:
+
+
+# Modified as three-layer composite roof
+cR = 1e6 * np.array([[1.4, 1.4, 1.4], [2.1, 2.1, 2.8]])  # heat capacity of conventional roof [J/K/m3]
+cW = 1.4e6 * np.ones((3, 2))  # heat capacity of wall [J/K/m3]
+cG = 1e6 * np.array([1.4, 2.5, 2.0])  # heat capacity of ground [J/K/m3]
+
+# Modified as three-layer composite roof
+kR = np.array([[0.7, 0.7, 0.7], [1, 1.2, 1.2]])  # thermal conductivity of conventional roof [W/K/m]
+kW = 0.7 * np.ones((3, 2))  # thermal conductivity of wall [W/K/m]
+kG = np.array([0.7, 0.7, 1.0])  # thermal conductivity of ground [W/K/m]
+
+nL = 10  # number of discrete layers (for soil moisture)
+
+
+# In[13]:
+
+
+# Soil parameters
+Ws = 0.48  # saturated soil water content (soil porosity)
+qmc = SMEC * Ws * 100  # volumetric soil moisture in percentage
+Wr = 0.08  # residual soil water content
+Ks = 3.38e-6  # saturated conductivity [m/s]
+dwG = 0.005  # depth of water-holding ground pavements
+dwR = 0.05  # depth of roof gravel layer
+dvR = 0.1  # depth of green roof soil
+poR = 0.5  # porosity of roof gravel
+b = [5.25, 5.0]  # parameter b in bc model [Veg. Ground|Green Roof]
+Hs = [0.36, 0.05]  # parameter Hs in bc model [Veg. Ground|Green Roof]
+
+
+# In[14]:
+
+
+# Initialize yearly results array
+# normal data
+#TR_UCM = np.zeros((nt, nR))
+#TW_UCM = np.zeros((nt, nW))
+#TG_UCM = np.zeros((nt, nG))
+#TRe_UCM = np.zeros((nt, 1))
+#TWe_UCM = np.zeros((nt, 1))
+#TGe_UCM = np.zeros((nt, 1))
+#H_UCM = np.zeros((nt, 1))
+#LE_UCM = np.zeros((nt, 1))
+#HR_UCM = np.zeros((nt, 1))
+#LER_UCM = np.zeros((nt, 1))
+#HG_UCM = np.zeros((nt, 1))
+#LEG_UCM = np.zeros((nt, 1))
+#Tcan_UCM = np.zeros((nt, 1))
+#RnR_UCM = np.zeros((nt, 1))
+#QR_UCM = np.zeros((nt, 1))
+#QW_UCM = np.zeros((nt, 1))
+#QIN_UCM = np.zeros((nt, 1))
+#QOUT_UCM = np.zeros((nt, 1))
+#IRRI_UCM = np.zeros((nt, 1))
+#WR_UCM = np.zeros((nt, 5))
+#WG_UCM = np.zeros((nt, 10))
+#qmR = np.zeros((1, 5))
+#qmG = np.zeros((1, 10))
+#BG_UCM = np.zeros((nt, 1))
+#HW_UCM = np.zeros((nt, 1))
+#SW_UCM = np.zeros((nt, 1))
+#LW_UCM = np.zeros((nt, 1))
+
+
+# In[15]:
+
+
+# 5-day averaged data
+#TRey_UCM = np.zeros((nnd, 1))
+#Hy_UCM = np.zeros((nnd, 1))
+#LEy_UCM = np.zeros((nnd, 1))
+#HRy_UCM = np.zeros((nnd, 1))
+#LERy_UCM = np.zeros((nnd, 1))
+#RnRy_UCM = np.zeros((nnd, 1))
+#QRy_UCM = np.zeros((nnd, 1))
+#QWy_UCM = np.zeros((nnd, 1))
+#QRy_abs = np.zeros((nnd, 1))
+#QWy_abs = np.zeros((nnd, 1))
+#WRy_UCM = np.zeros((nnd, 5))
+#WGy_UCM = np.zeros((nnd, 1))
+
+# measured
+#TRy_m = np.zeros((nnd, 1))
+#Hy_m = np.zeros((nnd, 1))
+#LEy_m = np.zeros((nnd, 1))
+#Rny_m = np.zeros((nnd, 1))
+
+
+# In[16]:
+
+
+RnEC = LWDEC + SWDEC - LWUEC - SWUEC
+
+
+# In[17]:
+
+
+# constants
+opt = 1                # option for radiative model: 1-Kusaka; 2-Masson
+KK = 273.15            # Celsius-Kelvin conversion
+Rd = 287               # gas constant for dry air [J/kg/K]
+Rv = 461.5             # gas constant for vapor
+rW = 1e3               # density of water [kg/m3]
+Cpd = 1005             # heat capacity of dry air [J/kg/K]
+Lv = 2.26e6            # latent heat of vaporization [J/kg]
+# LAI = 1.0              # leaf area index for short grass
+
+# discretization of ground soil for hydrological modeling
+dgG = np.ones(nL) * 1.0 / nL  # vegetated ground
+dgR = np.ones(nL // 2) * dR[-1, 1] / (nL / 2)  # green roof
+
+# parameters in bc model for water content diffusion
+#bG = b[0]
+#bR = b[1]
+HsG = Hs[0]
+HsR = Hs[1]
+
+# number of layers of a composite roof
+nRL = kR.shape[1]
+
+#-----------------------------------------------------------------
+# atmospheric forcing
+dt = 300                           # time interval
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+nt = len(th)                      # # of samples in modeling
+tS = th                           # local<->standard time
+Sq = np.zeros(nt)                # diffusive
+beR = np.ones(nt)                # evaporation efficiency coeff for green roof
+beG = np.ones(nt)                # evaporation efficiency coeff for green roof
+RoR = np.zeros((nt, nR))         # roof surface runoff
+RoG = np.zeros((nt, nG))         # ground runoff
+
+#-----------------------------------------------------------------
+# computation of roughness length and zero displacement height
+# Macdonald et al 1998 Atmospheric Environment 32(11): 1857-1864
+k = 0.4
+a = 4.43
+b = 1.0
+CD = 1.2
+d = Zr * (1 + a ** (-r) * (r - 1))
+Z0 = Zr * (1 - d / Zr) * np.exp(-((0.5 * b * CD * (1 - d / Zr) * h / k ** 2) ** (-0.5)))
+
+
+# In[18]:
+
+
+# Using Initial arrays:
+qmR = np.zeros((1, 5))
+qmG = np.zeros((1, 10))
+GW = np.zeros((nt, 3, nW))
+for i in range(1, nnd + 1):
+    day = ((i - 1) * Nd + 1) % 366  # current day of year
+
+    # Initializing surface temperatures and soil moisture
+    TGi = np.zeros(nG)
+    TWi = np.zeros((3, nW))
+    GWi = np.zeros((3, nW))
+    TRi = np.zeros(nR)
+
+    if i == 1:
+        TWi[0, :] = 20
+        GWi[0, :] = 0
+        TGi[0] = 20
+        TRi[0] = 20
+    else:
+        TWd = TWi[0]
+        GW = GWi[0]
+        TG_1 = TGi[0]
+        TG_2 = TGi[1]
+        TG_3 = TGi[2]
+        TR = TRi[0]
+        TRm = TRi[0]
+
+    if i == 1:
+        qmR[0] = 12  # initial volumetric SWC in ground vegetation
+        qmG[0] = 12
+    else:
+        WRv = qmR[0] / 100
+        WGv = qmG[0] / 100
+
+    # qmi = qmc[(i - 1) * 48]  # initial roof/wall temperature from EC
+
+
+# In[19]:
+
+
+# Initial temperature and soil moisture
+Tsi = TsEC[0]  # initial roof/wall temperature from EC
+if i is 1:
+    TWi = np.full_like(TWi, 20)
+    GWi = np.zeros_like(GWi)
+    TGi = np.full_like(TGi, 20)
+    TRi = np.full_like(TRi, 20)
+else:
+        TWd = TWi[0]
+        GW = GWi[0]
+        TG_1 = TGi[0]
+        TG_2 = TGi[1]
+        TG_3 = TGi[2]
+        TR = TRi[0]
+        TRm = TRi[0]
+qmi = qmc[0]
+TWd += KK
+TR += KK
+TRm += KK
+Tcan += KK
+max_nR_minus_1 = max(1, nR-1)
+delWR = np.ones((nt, max_nR_minus_1)) * dwR
+delWG = np.ones((nt, nG-1)) * dwG
+if pd == 0:
+    delWR[0, :] = 0
+    delWG[0, :] = 0
+    WRi = poR * delWR[0, :] / dwR
+    WGi = delWG[0, :] / dwG
+
+
+
+# In[20]:
+
+
+for i in range(nt):
+    if 38 <= i <= 50:
+        Pd = pd_in[(i-1)*npp:i*npp+1] * 0  # precipitation rate [m/s]
+else:
+    Pd = pd_in[(i-1)*npp:i*npp+1]  # precipitation rate [m/s]
+
+qa = qa_in[(i-1)*npp:i*npp+1]  # specific humidity [kg/kg]
+Pa = Pa_in[(i-1)*npp:i*npp+1]  # atmospheric pressure [Pa]
+LD = LD_in[(i-1)*npp:i*npp+1]  # downwelling longwave radiation
+SD = SD_in[(i-1)*npp:i*npp+1]  # downwelling shortwave radiation
+Ta = Ta_in[(i-1)*npp:i*npp+1]  # virtual air temperature [oC]
+ra = ra_in[(i-1)*npp:i*npp+1]  # air density
+Ua = Ua_in[(i-1)*npp:i*npp+1]  # wind speed
+
+
+# In[21]:
+
+
+# Initialize arrays for yearly results
+TRey_UCM = np.zeros(nnd)
+Hy_UCM = np.zeros(nnd)
+LEy_UCM = np.zeros(nnd)
+HRy_UCM = np.zeros(nnd)
+LERy_UCM = np.zeros(nnd)
+RnRy_UCM = np.zeros(nnd)
+QRy_UCM = np.zeros(nnd)
+QWy_UCM = np.zeros(nnd)
+QRy_abs = np.zeros(nnd)
+QWy_abs = np.zeros(nnd)
+WGy_UCM = np.zeros(nnd)
+
+# Loop through each 6-day period
+for i in range(1, nnd + 1):
+    day = ((i - 1) * Nd + 1) % 366  # current day of year
+
+
+# In[22]:
+
+
+# Write results into one-year vectors
+# TR_UCM[(i-1)*np+1:i*np+1, :] = TR
+# TG_UCM[(i-1)*np+1:i*np+1, :] = TG
+# TRe_UCM[(i-1)*np+1:i*np+1] = TRe
+# TWe_UCM[(i-1)*np+1:i*np+1] = TWe
+# TGe_UCM[(i-1)*np+1:i*np+1] = TGe
+# Ts_UCM[(i-1)*np+1:i*np+1, :] = Tu
+# H_UCM[(i-1)*np+1:i*np+1] = Hu
+# LE_UCM[(i-1)*np+1:i*np+1] = LEu
+# HR_UCM[(i-1)*np+1:i*np+1] = HRe
+# LER_UCM[(i-1)*np+1:i*np+1] = LERe
+# HG_UCM[(i-1)*np+1:i*np+1] = HGe
+# LEG_UCM[(i-1)*np+1:i*np+1] = LEGe
+# Tcan_UCM[(i-1)*np+1:i*np+1] = Tcan
+# RnR_UCM[(i-1)*np+1:i*np+1] = ReR
+# QIN_UCM[(i-1)*np+1:i*np+1] = QIN
+# WR_UCM[(i-1)*np+1:i*np+1, :] = WRv
+# WG_UCM[(i-1)*np+1:i*np+1, :] = WGv
+# IRRI_UCM[(i-1)*np+1:i*np+1, :] = IRRI
+# HW_UCM[(i-1)*np+1:i*np+1] = HWe
+# LW_UCM[(i-1)*np+1:i*np+1] = LWe
+# SW_UCM[(i-1)*np+1:i*np+1] = SWe
+
+# # Compute yearly averages
+# TRey_UCM[i-1] = np.nanmean(TRe, axis=0)
+# Hy_UCM[i-1] = np.nanmean(Hu, axis=0)
+# LEy_UCM[i-1] = np.nanmean(LEu, axis=0)
+# HRy_UCM[i-1] = np.nanmean(HRe, axis=0)
+# LERy_UCM[i-1] = np.nanmean(LERe, axis=0)
+# RnRy_UCM[i-1] = np.nanmean(ReR, axis=0)
+# QRy_UCM[i-1] = np.nanmean(QG, axis=0)
+# QWy_UCM[i-1] = np.nanmean(QIN, axis=0)
+# QRy_abs[i-1] = np.nanmean(np.abs(QG), axis=0)
+# QWy_abs[i-1] = np.nanmean(np.abs(QIN), axis=0)
+# WGy_UCM[i-1] = np.nanmean(RnEC[(i-1)*np+1:i*np+1])
+
+
+# In[23]:
+
+
+# Assuming TRe, Hu, LEu, HRe, LERe, ReR, QRe, QWe, RnEC are your data arrays
+# and i, np are the loop parameters
+
+# Initialize arrays for storing results
+# TRey_UCM = np.nanmean(TRe, axis=0)
+# Hy_UCM = np.nanmean(Hu, axis=0)
+# LEy_UCM = np.nanmean(LEu, axis=0)
+# HRy_UCM = np.nanmean(HRe, axis=0)
+# LERy_UCM = np.nanmean(LERe, axis=0)
+# RnRy_UCM = np.nanmean(ReR, axis=0)
+# QRy_UCM = np.nanmean(QRe, axis=0)
+# QWy_UCM = np.nanmean(QWe, axis=0)
+
+# # Absolute building energy consumption
+# QRy_abs = np.nanmean(np.abs(QRe), axis=0)
+# QWy_abs = np.nanmean(np.abs(QWe), axis=0)
+
+# # Calculate WGy_m
+# WGy_m = np.nanmean(RnEC[(i-1)*np+1:i*np+1])
+
+
+# In[24]:
+
+
+# constants
+opt = 1  # option for radiative model: 1-Kusaka; 2-Masson
+KK = 273.15  # Celsius-Kelvin conversion
+Rd = 287  # gas constant for dry air [J/kg/K]
+Rv = 461.5  # gas constant for vapor
+rW = 1e3  # density of water [kg/m3]
+Cpd = 1005  # heat capacity of dry air [J/kg/K]
+Lv = 2.26e6  # latent heat of vaporization [J/kg]
+# LAI = 1.0  # leaf area index for short grass
+
+# discretization of ground soil for hydrological modeling
+dgG = [1.0 / nL] * nL  # vegetated ground
+dgR = [dR[-1, 1] / (nL / 2)] * (nL // 2)  # green roof
+
+# parameters in bc model for water content diffusion
+b   = (5.25,5.0)
+bG = b[0]
+bR = b[1]
+HsG = Hs[0]
+HsR = Hs[1]
+
+# number of layers of a composite roof
+nRL = kR.shape[1]
+
+
+# In[25]:
+
+
+# atmospheric forcing
+dt = 300                            # time interval
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+tS= th
+#th = th.reshape(-1, 1)
+#original_array = np.array(th)
+#flattened_array = original_array.flatten()
+#reshaped_array = flattened_array.reshape(-1,1)
+#a4 = reshaped_array
+nt = len(th)                        # total number of points
+tS = th                             # local standard time
+Sq = np.zeros((nt, 1))              # diffusive 
+beR = np.ones((nt, 1))              # evaporation efficiency coeff for green roof
+beG = np.ones((nt, 1))              # evaporation efficiency coeff for green roof
+RoR = np.zeros((nt, nR))            # initializing RoR matrix with zeros
+RoG = np.zeros((nt, nG))            # initializing RoG matrix with zeros
+
+
+# In[26]:
+
+
+# computation of roughness length and zero displacement height
+# Macdonald et al 1998 Atmospheric Environment 32(11): 1857-1864
+k = 0.4
+a = 4.43
+b = 1.0
+CD = 1.2
+d = Zr * (1 + a**(-r) * (r - 1))
+Z0 = Zr * (1 - d/Zr) * math.exp(-((0.5 * b * CD * (1 - d/Zr) * h / k**2) ** (-0.5)))
+
+
+# In[27]:
+
+
+def Keff(d, k, n):
+    kb = np.zeros(n)
+    
+    for j in range(n-1):
+        kb[j] = (d[j] + d[j+1]) / ((d[j]/k[j]) + (d[j+1]/k[j+1]))
+
+    kb[n-1] = k[n-1]
+
+    return kb
+
+
+# In[28]:
+
+
+# effective thermal material properties
+alW = kW / cW  # diffusicity
+alR = kR / cR
+alG = kG / cG
+eWe = np.dot(fW, eW)
+eGe = np.dot(fG, eG)
+aWe = np.dot(fW, aW)
+aGe = np.dot(fG, aG)
+kWb = np.zeros((3, nW))
+
+for i in range(nW):
+    kWb[:, i] = Keff(dW[:, i], kW[:, i], 3)
+
+# Replace the following function with your implementation of Keff
+def Keff(dW_i, kW_i, value):
+    # Implement your Keff function here
+    # For example, you can replace the following line with your logic
+    result = dW_i + kW_i + value
+    return result
+
+
+# In[29]:
+
+
+#qz, qs = Zenith(d, tS, phi, lam, nt)
+def Zenith(day, tS, phi, lam,nt):
+    dy = 365.25  # No of days per year
+    dr = 170    # day of the summer solstice
+    phR = 0.409  # latitude of the Tropic of Cancer [rad]
+    Del = phR * np.cos(2 * np.pi * (day - dr) / dy)  # solar declination angle
+    Omt = np.pi * tS / 12 - lam
+    a_zenith = np.sin(phi) * np.sin(Del) - np.cos(phi) * np.cos(Del) * np.cos(Omt)
+# Assuming you have values for 'd', 't', and 'lam'
+#day = Insert the value for 'd' here
+#tS = Insert the value for 't' here
+#lam = Insert the value for 'lam' here
+    for i in range(nt):
+         if a_zenith[i] < 0:
+            a_zenith[i] = 0
+
+    qz = np.arccos(a_zenith)
+    b_zenith = (np.cos(qz) * np.sin(phi) - np.sin(Del)) / (np.cos(Del) * np.sin(qz)) 
+    qs = np.arccos(b_zenith)
+    [qz,qs] = Zenith(day,tS,phi,lam,nt)
+    return qz, qs
+
+
+# In[30]:
+
+
+def Viewfac(h,w):
+              
+    FSG = np.sqrt(1 + (h / w) ** 2) - h / w  
+    FGS = FSG
+    FWW = np.sqrt(1 + (w / h) ** 2) - w / h  
+    FGW = (1 - FGS) / 2  
+    FWG = (1 - FWW) / 2
+    FWS = FWG
+    FG = FGS
+    FW = FWS
+ 
+    return FGS, FWW, FGW, FWG, FWS
+
+
+# In[31]:
+
+
+def Green(Fo, d, k, a, t, n, icr):
+    """
+    Compute Green's function for solid layers.
+
+    Parameters:
+    Fo  -- Fourier number
+    d   -- thickness
+    k,a -- thermal conductivity and diffusivity
+    t   -- time
+    n   -- harmonic term
+    icr -- index for critical condition adjustment
+    """
+    Fo_cr = 1 / np.pi / np.sqrt(2)  # characteristic Fourier number
+    dt = t[1] - t[0]  # time step, in s
+    t_cr = 300 * icr  # critical nondimensional time
+
+    x = np.array([0, d])
+
+    if t[-1] < t_cr:
+        nt = len(t)
+    else:
+        nt = int(np.ceil(t_cr / dt))
+
+    g = np.zeros((len(t), 2))
+
+    I1 = np.where((Fo[:nt] <= Fo_cr) & (Fo[:nt] != 0))[0]
+    I2 = np.where((Fo[:nt] > Fo_cr) & (Fo[:nt] != 0))[0]
+
+    if I1.size > 0:
+        # Compute small time solution
+        R = np.arange(-np.floor((n-1)/2), np.ceil((n-1)/2) + 1)
+        xx, tt, nn = np.meshgrid(x, t[I1], R, indexing='ij')
+        K = np.sqrt(a * tt / np.pi) * np.exp(-(xx - 2 * nn * d) ** 2 / (4 * a * tt)) -\
+            np.abs(xx - 2 * nn * d) / 2 * erfc(np.abs(xx - 2 * nn * d) / (2 * np.sqrt(a * tt)))
+        g[I1, :] = 2 / k * np.sum(K, axis=2)
+
+    if I2.size > 0:
+        # Solution based on eigenfunction
+        R = np.arange(1, n + 1)
+        xx, tt, nn = np.meshgrid(x, t[I2], R, indexing='ij')
+        K = np.exp(-a * (nn * np.pi / d) ** 2 * tt) / nn ** 2 * np.cos(nn * np.pi * xx / d)
+        xx, tt = np.meshgrid(x, t[I2], indexing='ij')
+        g[I2, :] = a * tt / k / d + d / 6 / k * (3 * (1 - xx / d) ** 2 - 1) -\
+            2 * d / np.pi ** 2 / k * np.sum(K, axis=2)
+
+    return g
+
+
+# In[32]:
+
+
+def compute_Greens_functions(th, nt, nW, nR, nRL, alW, dW, kW, gW, alR, dR, kR, gR, n, icr, nG, alG, kG, gG):
+    n = 20
+    tl = th * 3600
+    FoW = np.zeros((nt, nW))
+    FoR = np.zeros((nt, nR, nRL))
+    icr = 576   #critical time steps for
+    for i in range(nR):
+        for j in range(nRL):
+            FoR = alR[i, j] * tl / dR[i, j]**2
+            gR = Green(FoR[:, i, j], dR[i, j], kR[i, j], alR[i, j], tl, n, icr)
+
+    for i in range(nG):
+        gG = 2 * np.sqrt(alG[i] * tl / np.pi) / kG[i]  # for road
+
+    return FoW, FoR, gW, gR, gG
+
+# Define the Green function function here
+# You can include the function definition provided earlier in this conversation
+
+
+# In[33]:
+
+
+def Ts(dt, qW, qG, qR, GW, GG, GR, dW, dG, dR, cW, cG, cR, nL, nW, nG, nR, TW0, TG0, TR0):
+    TW = np.zeros((1, nL, nW))  #initial arrays
+    TR = np.zeros((1, nL, nR))  #initial arrays
+    TG = np.zeros((1, nL, nG))  #initial arrays
+
+    for i in range(nW):
+        TW[0, 0, i] = TW0[0, 0, i] + dt * (qW[0, i] - GW[0, 0, i]) / dW[0, i] / cW[0, i]
+
+    for i in range(nG):
+        TG[0, 0, i] = TG0[0, 0, i] + dt * (qG[0, i] - GG[0, 0, i]) / dG[0, i] / cG[0, i]
+
+    for i in range(nR):
+        TR[0, 0, i] = TR0[0, 0, i] + dt * (qR[0, i] - GR[0, 0, i]) / dR[0, i] / cR[0, i]
+
+    for j in range(1, nL):
+        for i in range(nW):
+            TW[0, j, i] = TW0[0, j, i] + dt * (GW[0, j - 1, i] - GW[0, j, i]) / dW[j, i] / cW[j, i]
+
+        for i in range(nG):
+            TG[0, j, i] = TG0[0, j, i] + dt * (GG[0, j - 1, i] - GG[0, j, i]) / dG[j, i] / cG[j, i]
+
+        for i in range(nR):
+            TR[0, j, i] = TR0[0, j, i] + dt * (GR[0, j - 1, i] - GR[0, j, i]) / dR[j, i] / cR[j, i]
+
+    return TW, TG, TR
+
+
+# In[34]:
+
+
+def shortrad(opt, qz, qs, qcan, Sd, Sq, w, h, aW, aWe, aG, aGe, aR, FGS, FWW, FGW, FWG, FWS, nW, nG, nR):
+    FG = FGS
+    FW = FWS
+
+    # Shadow length
+    qn = np.abs(qcan - qs)
+    lsh = h * np.tan(qz) * np.sin(qn)
+    lsh = np.minimum(lsh, w)
+
+    SR = np.zeros(nR)
+    SW1 = np.zeros(nW)
+    SW2 = np.zeros(nW)
+    SG1 = np.zeros(nG)
+    SG2 = np.zeros(nG)
+
+    if opt == 1:  # Kusaka
+        for j1 in range(nR):
+            SR[j1] = Sd * (1 - aR[j1]) + Sq * (1 - aR[j1])
+
+        for j2 in range(nW):
+            SW1[j2] = Sd * lsh * (1 - aW[j2]) / (2 * h) + Sq * FWS * (1 - aW[j2])
+            SW2[j2] = (Sd * (w - lsh) * aGe * FWG * (1 - aW[j2]) / w +
+                       Sq * FWG * (1 - aW[j2]) +
+                       Sd * lsh * aW[j2] * FWW * (1 - aW[j2]) / (2 * h) +
+                       Sq * FWS * aW[j2] * FWW * (1 - aW[j2]))
+
+        for j3 in range(nG):
+            SG1[j3] = Sd * (w - lsh) * (1 - aG[j3]) / w + Sq * FGS * (1 - aG[j3])
+            SG2[j3] = (Sd * lsh * aWe * FGW * (1 - aG[j3]) / (2 * h) +
+                       Sq * FWS * aWe * FGW * (1 - aG[j3]))
+
+        SW = SW1 + SW2
+        SG = SG1 + SG2
+
+    return SW, SG, SR
+
+
+# In[35]:
+
+
+def longrad(opt, Ld, TW, TWe, TG, TGe, TR, eW, eWe, eG, eGe, eR, FGS, FWW, FGW, FWG, FWS, nW, nG, nR):
+    ss = 5.67e-8  # Stephan-Boltzmann constant [J/s/m2/K4]
+    FG = FGS
+    FW = FWS
+    LG1 = np.zeros(nG)
+    LG2 = np.zeros(nG)
+    LW1 = np.zeros(nW)
+    LW2 = np.zeros(nW)
+    Lr = np.zeros(nR)
+
+    if opt == 1:
+        for j1 in range(nR):
+            Lr[j1] = eR[j1] * (Ld - ss * TR[j1]**4)
+
+        for j2 in range(nW):
+            LW1[j2] = eW[j2] * (Ld * FWS + eGe * ss * TGe**4 * FWG +
+                                eW[j2] * ss * TW[j2]**4 * FWW - ss * TW[j2]**4)
+            LW2[j2] = eW[j2] * ((1 - eGe) * Ld * FGS * FWG +
+                                2 * (1 - eGe) * eW[j2] * ss * TW[j2]**4 * FGW * FWG +
+                                (1 - eW[j2]) * Ld * FWS * FWW +
+                                (1 - eW[j2]) * eGe * ss * TGe**4 * FWG * FWW +
+                                eW[j2] * (1 - eW[j2]) * ss * TW[j2]**4 * FWW * FWW)
+
+        for j3 in range(nG):
+            LG1[j3] = eG[j3] * (Ld * FGS + 2 * eWe * ss * TWe**4 * FGW - ss * TG[j3]**4)
+            LG2[j3] = 2 * eG[j3] * ((1 - eWe) * Ld * FWS * FGW +
+                                    (1 - eWe) * eG[j3] * ss * TG[j3]**4 * FWG * FGW +
+                                    eWe * (1 - eWe) * ss * TWe**4 * FWW * FGW)
+
+        Lw = LW1 + LW2
+        Lg = LG1 + LG2
+
+    return Lw, Lg, Lr
+
+
+# In[36]:
+
+
+def TGF(g, Q, q, i):
+    """
+    Compute solid temperatures for walls, roads, and roofs.
+
+    Parameters:
+    - g: Green's function
+    - Q: net input heat flux at the exposure surface
+    - q: heat flux at the inner (building) surface = QGR , QGW
+    - i: index
+
+    Returns:
+    - T: solid temperature
+    - q1: computed value
+    """
+    
+    # Compute new surface temperatures
+    S1 = np.trapz(np.squeeze(g[0:i, 0]), [0] + list(q[i-2::-1]))
+    S2 = np.trapz(np.squeeze(g[0:i, 1]), [0] + list(Q[i-2::-1]))
+    q1 = (2 * (S2 - S1) + g[1, 1] * Q[i]) / g[1, 0]
+    S3 = np.trapz(np.squeeze(g[0:i, 1]), [0] + list(q[i-2::-1]))
+    S4 = np.trapz(np.squeeze(g[0:i, 0]), [0] + list(Q[i-2::-1]))
+    T = -0.5 * q1 * g[1, 1] + 0.5 * Q[i] * g[1, 0] + (S4 - S3)
+
+    return T, q1
+
+
+# In[37]:
+
+
+def DKeff(d, WGv, Ws, Ks, nL):
+    
+    for j in range(nL):
+        K = Ks * (WGv / Ws)**(2 * b + 3)
+        D = b * Ks * Hs * (WGv / Ws)**(b + 2) / Ws
+    
+    for j in range(nL - 1):
+        Ke = (d[j] + d[j + 1]) / ((d[j] / K) + (d[j + 1] / K[j + 1]))
+        De = (d[j] + d[j + 1]) / ((d[j] / D) + (d[j + 1] / D[j + 1]))
+    
+    Ke[nL - 1] = K[nL - 1]
+    De[nL - 1] = D[nL - 1]
+    
+    return De, Ke 
+
+
+# In[38]:
+
+
+def qsat(Lv, Rv, Rd, T, P):
+    # Reference temperature @ 25°C
+    Tref = 298
+    
+    # Reference saturated vapor pressure at Tref
+    eref = 3167
+    # Compute saturated vapor pressure using Clausius-Clapeyron Equation
+    T = TR or TG
+    
+    es1 = Lv * (T - Tref) / Rv
+    es2 = es1 / T
+    es3 = es2 / Tref
+    es4 = np.exp(es3)
+    es5 = eref * es4
+    es = es5
+
+    rs1 = Rd / Rv
+    rs2 = (Rd / Rv) * es5
+    Pa[0] = np.array([[np.array([1.006442])]])
+    # Extract the inner value and convert it to a non-array value
+    Pa[0] = float(Pa[0][0])
+    rs3 = Pa[0] - es5
+    
+    rs = (Rd/Rv)*es/ (Pa[0]-es)
+    qs = rs/(rs+1)
+    qs = qsat
+    return qs
+
+
+# In[ ]:
+
+
+def qsat(Lv, Rv, Rd, T, P):
+    # Reference temperature @ 25°C
+    Tref = 298
+    
+    # Reference saturated vapor pressure at Tref
+    eref = 3167
+    # Compute saturated vapor pressure using Clausius-Clapeyron Equation
+    
+    es1 = Lv * (TG - Tref) / Rv
+    es2 = es1 / TG
+    es3 = es2 / Tref
+    es4 = np.exp(es3)
+    es5 = eref * es4
+    es = es5
+
+    rs1 = Rd / Rv
+    rs2 = (Rd / Rv) * es5
+    Pa[0] = np.array([[np.array([1.006442])]])
+    # Extract the inner value and convert it to a non-array value
+    Pa[0] = float(Pa[0][0])
+    rs3 = Pa[0] - es5
+    
+    rs = (Rd/Rv)*es/ (Pa[0]-es)
+    qsG = rs/(rs+1)
+# qG = qsG[i, nG - 1]
+# qGe = beG[i] * fG[nG - 1] * qsG[i, nG - 1] + np.ceil(WGi[i]) * qsG[i, :nG - 1] * fG[:nG - 1]
+    return qsG
+
+
+# In[ ]:
+
+
+def qsat(Lv, Rv, Rd, T, P):
+    # Reference temperature @ 25°C
+    Tref = 298
+    
+    # Reference saturated vapor pressure at Tref
+    eref = 3167
+    # Compute saturated vapor pressure using Clausius-Clapeyron Equation
+    
+    es1 = Lv * (TR - Tref) / Rv
+    es2 = es1 / TR
+    es3 = es2 / Tref
+    es4 = np.exp(es3)
+    es5 = eref * es4
+    es = es5
+
+    rs1 = Rd / Rv
+    rs2 = (Rd / Rv) * es5
+    Pa[0] = np.array([[np.array([1.006442])]])
+    # Extract the inner value and convert it to a non-array value
+    Pa[0] = float(Pa[0][0])
+    rs3 = Pa[0] - es5
+    
+    rs = (Rd/Rv)*es/ (Pa[0]-es)
+    qsR = rs/(rs+1)
+    return qsR
+
+
+# In[39]:
+
+
+def WCdiff(inflow, outflow, WC0, D, K, d, nL, dt):
+    # Initialize diffusion water content within layers
+    DWG = np.zeros(nL)
+    WCt = np.zeros(nL)
+
+    # Update diffusive water transport within layers
+    DWG[0] = 2 * D[0] * (WC0[0] - WC0[1]) / (d[0] + d[1]) + K[0]
+    DWG[-1] = outflow
+
+    for j in range(1, nL - 1):
+        DWG[j] = 2 * D[j] * (WC0[j] - WC0[j + 1]) / (d[j] + d[j + 1]) + K[j]
+
+    WCt[0] = WC0[0] + dt * (inflow - DWG[0]) / d[0]
+
+    for j in range(1, nL):
+        WCt[j] = WC0[j] + dt * (DWG[j - 1] - DWG[j]) / d[j]
+
+    return WCt
+
+
+# In[40]:
+
+
+def Conduct(kW, nL, dW, TB, TW, nW):
+    GW = np.zeros((1, nL, nW))
+
+    for i in range(nW):
+        GW[0, nL-1, i] = 2 * kW[nL-1, i] * (TW[0, nL-1, i] - TB - 273.15) / dW[nL-1, i]
+
+    for j in range(nL - 1):
+        for i in range(nW):
+            GW[0, j, i] = 2 * kW[j, i] * (TW[0, j, i] - TW[0, j+1, i]) / (dW[j, i] + dW[j+1, i])
+
+    return GW
+
+
+# In[41]:
+
+
+def Tdiscrete(dt, qG, GG, dG, cG, nL, nG, TG0):
+    TG = np.zeros((1, nL, nG))
+    
+    for i in range(nG):
+        TG[0, 0, i] = TG0[0, 0, i] + dt * (qG[0, i] - GW[0, 0, i]) / dG[0, i] / cG[0, i]
+    
+    for j in range(1, nL):
+        for i in range(nG):
+            TG[0, j, i] = TG0[0, j, i] + dt * (GG[0, j-1, i] - GG[0, j, i]) / dG[j, i] / cG[j, i]
+    
+    return TG
+
+
+# In[42]:
+
+
+def Tdiscrete(dt, qW, GW, dW, cW, nL, nW, TW0):
+    TW = np.zeros((1, nL, nW))
+    
+    for i in range(nW):
+        TW[0, 0, i] = TW0[0, 0, i] + dt * (qW[0, i] - GW[0, 0, i]) / dW[0, i] / cW[0, i]
+    
+    for j in range(1, nL):
+        for i in range(nW):
+            TW[0, j, i] = TW0[0, j, i] + dt * (GW[0, j-1, i] - GW[0, j, i]) / dW[j, i] / cW[j, i]
+    
+    return TW
+
+
+# In[43]:
+
+
+def Tdiscrete(dt, qR, GR, dR, cR, nL, nR, TR0):
+    TR = np.zeros((1, nL, nR))
+    
+    for i in range(nR):
+        TR[0, 0, i] = TR0[0, 0, i] + dt * (qR[0, i] - GR[0, 0, i]) / dR[0, i] / cR[0, i]
+    
+    for j in range(1, nL):
+        for i in range(nR):
+            TR[0, j, i] = TR0[0, j, i] + dt * (GR[0, j-1, i] - GR[0, j, i]) / dR[j, i] / cR[j, i]
+    
+    return TR
+
+
+# In[120]:
+
+
+def Raerod(Ta, ua, z1, z2, z0m, z0h, Ts, u0):
+    dT = Ts - Ta
+    Tm = 0.5 * (Ts + Ta)
+    Ts = TR
+    g = 9.81           #gravity constant
+    k = 0.35           #Von-Karman constants
+    b = 9.4
+    B = 9.4/2
+    R = 0.74
+    z0m = ZmR = 0.005
+    z0h = ZhR = ZmR/10
+    m = math.log(z0m/z0h)
+    z1 = Za = 21.95
+    z2 = Zr
+    z = z1 - z2
+    Ur = 2 * Ua[0] * np.log(Zr / 3 / Z0) / np.log((Za - Zr + Zr / 3) / Z0) / pi
+    original_array_Ur = np.array(Ur)
+    reshaped_array_Ur = original_array_Ur.T
+    Ur = reshaped_array_Ur
+    U0 = 0
+    U = Ua-U0
+    dT = Ta - Ts
+    Tm = (Ta + Ts) / 2
+    a20 = k**2 / math.log(z/z0m)**2
+    ab = g * z * dT
+    abc = ab / 10000
+    cdf = Tm / U**2
+    Ri = abc / cdf
+    C = math.log(z/z0m) / math.log(z/z0h)
+    Chs = 3.2165 + 4.3431 * m + 0.536 * m**2 - 0.0781 * m**3
+    ph = 0.5802 - 0.1571 * m + 0.0327 * m**2 - 0.0026 * m**3
+    Ch = Chs * a20 * b * C * (z / z0h)**ph
+    Fh = C * (1 - b * Ri / (1 + Ch * np.sqrt(np.abs(Ri))))
+    Fh = C / (1 + B * Ri)**2
+    RR = Res = R / (U * a2 * Fh)
+
+    return RR
+
+
+# In[44]:
+
+
+#initial arrays(place holders)- for the first proceed of all functions we used these placeholders to have the continued iterations
+
+# gW = np.zeros((nt, 2, nW))
+# gG = np.zeros((nt, nG))
+# gR = np.zeros((nt, 2, nR))
+# TW = np.zeros((nt, nW))
+# TG = np.zeros((nt, nG))
+# TR = np.zeros((nt, nR))
+# TRc = np.zeros((nt, 1))
+# TWe = np.zeros((nt, 1))
+# TGe = np.zeros((nt, 1))
+# TRe = np.zeros((nt, 1))
+# LW = np.zeros((nt, nW))
+# LG = np.zeros((nt, nG))
+# LR = np.zeros((nt, nR))
+# SW = np.zeros((nt, nW))
+# SG = np.zeros((nt, nG))
+# SR = np.zeros((nt, nR))
+# HW = np.zeros((nt, nW))
+# HG = np.zeros((nt, nG))
+# HR = np.zeros((nt, nR))
+# HWe = np.zeros((nt, 1))
+# HGe = np.zeros((nt, 1))
+# HRe = np.zeros((nt, 1))
+# LEC = np.zeros((nt, 1))
+# LEG = np.zeros((nt, nG))
+# LER = np.zeros((nt, nR))
+# RW = np.zeros((nt, 1))
+# RG = np.zeros((nt, 1))
+# RR = np.zeros((nt, nR))
+# Rcan = np.zeros((nt, 1))
+# Hcan = np.zeros((nt, 1))
+# Tcan = np.zeros((nt, 1))
+# LEGe = np.zeros((nt, 1))
+# LERe = np.zeros((nt, 1))
+# Ur = np.zeros((nt, 1))
+# Us = np.zeros((nt, 1))
+# RnW = np.zeros((nt, nW))
+# RnG = np.zeros((nt, nG))
+# RnR = np.zeros((nt, nR))
+# ReW = np.zeros((nt, 1))
+# ReG = np.zeros((nt, 1))
+# ReR = np.zeros((nt, 1))
+# QW = np.zeros((nt, nW))
+# QG = np.zeros((nt, nG))
+# QR = np.zeros((nt, nR))
+# qR = np.zeros((nt, nR))
+# qsR = np.zeros((nt, nR))
+# qG = np.zeros((nt, nG))
+# qsG = np.zeros((nt, nG))
+# qGe = np.zeros((nt, 1))
+# qcan = np.zeros((nt, 1))
+# qW1 = np.zeros((nt, nW))
+# qR1 = np.zeros((nt, nR))
+
+# # Soil moisture
+# DGe = np.zeros((nt, nL))
+# KGe = np.zeros((nt, nL))
+# WGv = Ws * np.ones((nt, nL))
+# WRv = Ws * np.ones((nt, 1))
+# WRi = np.ones((nt, max(1, nR-1)))
+# delWR = dwR * np.ones((nt, max(1, nR-1)))
+# WGi = np.ones((nt, nG-1))
+# delWG = dwG * np.ones((nt, nG-1))
+# WG_nd = np.zeros((nt, nL))
+# WR_nd = np.zeros((nt, 1))
+# SWG = np.zeros((nt, nG))
+# SWR = np.zeros((nt, nR))
+# DWG = np.zeros((nt, nL))
+# RsR = np.zeros((nt, 1))
+
+
+# In[45]:
+
+
+for i in range(1, nt + 1):  # time looping
+    nit0 = 0
+    ok = 0  # monitoring iteration
+    nit0 += 1
+#use initial arrays
+    qW1 = np.zeros((nt, nW))
+    qR1 = np.zeros((nt, nR))
+#use initial arrays
+# quantities to check for convergence
+    #x1 = qW1[i - 1, 0]
+    #x2 = qR1[i - 1, 0]
+    #x4 = Tcan[i - 1]
+    #x3 = WGv[i - 1]
+    #xW = WRv[i - 1]
+    Pd = pd_in[(i-1)*npp:i*npp+1]
+#you can use initial arrays for the first comupation
+    SW = np.zeros((nt, nW))
+    SG = np.zeros((nt, nG))
+    SR = np.zeros((nt, nR))
+    LW = np.zeros((nt, nW))
+    LG = np.zeros((nt, nG))
+    LR = np.zeros((nt, nR))
+    HW = np.zeros((nt, nW))
+    HG = np.zeros((nt, nG))
+    HR = np.zeros((nt, nR))
+    LEC = np.zeros((nt, 1))
+    LEG = LEG_UCM
+    LER = np.zeros((nt, nR))
+        # source function for energy transport
+    QW = SW[i - 1, :] + LW[i - 1, :] - HW[i - 1, :]
+    QR = SR[i - 1, :] + LR[i - 1, :] - HR[i - 1, :] - LER[i - 1, :]
+    QG = SG[i - 1, :] + LG[i - 1, :] - HG[i - 1, :] - LEG[i - 1, :]
+
+
+# In[94]:
+
+
+SWG = np.zeros((nt, nG))
+SWR = np.zeros((nt, nR))
+#for j in range(nG):
+    #SWG = Pd - LEG / Lv / rW - RoG
+
+#for j in range(nR):
+    #SWR = Pd - LER / Lv / rW - RoR
+
+
+# In[127]:
+
+
+#use intial arrays
+WGv = Ws * np.ones((nt, nL))
+WRv = Ws * np.ones((nt, 1)) 
+WGi = np.ones((nt, nG-1))
+WRi = np.ones((nt, max(1, nR-1)))
+
+# vegetation
+#WRv = WRv[i-1] + dt * SWR / dvR
+#WGv = WGv[i-1, 0] + dt * (SWG - DWG) / dG
+#for j2 in range(1, nL):
+    #WGv = WGv + dt * (DWG - DWG) / dG
+
+
+
+# In[139]:
+
+
+#WGv[i - 1, :] = np.maximum(Wr, WGv[i - 1, :])
+#WGv[i - 1, :] = np.minimum(Ws, WGv[i - 1, :])
+#WGi[i - 1, :] = np.maximum(0, WGi[i - 1, :])
+#WGi[i - 1, :] = np.minimum(1, WGi[i - 1, :])
+#WRv[i - 1, :] = np.maximum(Wr, WRv[i - 1, :])
+#WRv[i - 1, :] = np.minimum(Ws, WRv[i - 1, :])
+#WRi[i - 1, :] = np.maximum(0, WRi[i - 1, :])
+#WRi[i - 1, :] = np.minimum(poR, WRi[i - 1, :])
+
+        # compute be from water availability
+WG_nd = (WGv-Wr)/(Ws-Wr);
+WR_nd = (WRv-Wr)/(Ws-Wr);
+beR = 1.0 * (1 - np.exp(-10.563 * WR_nd[:]))
+beG = 1.0 * (1 - np.exp(-10.563 * WG_nd[:, 0:1]))
+
+#beG[i - 1] = WG_nd[i - 1]
+#beR[i - 1] = WR_nd[i - 1]
+        # update energy budget
+T1 = TWd
+TG = TG_UCM
+T2 = TG
+T3 = TR
+#TWd = np.dot(fW, np.squeeze(T1))
+#TGe = np.dot(fG, T2)
+#TRe = np.dot(fR, T3)
+
+Ur = 2 * Ua* np.log(Zr / 3 / Z0) / np.log((Za - Zr + Zr / 3) / Z0) / np.pi
+Us = Ur * np.exp(-0.25 * h / w)
+RW = Cpd * ra / (11.8 + 4.2 * Us)
+RG = RW
+
+ # compute turbulent fluxes
+
+#qR = qsR
+#qRe[i - 1] = np.dot(qR1[i - 1, :, 2], fR)
+QIN = (TWd - TB - KK) * 60
+HWe = np.dot(HW[i - 1, :], fW)
+SWe = np.dot(SW[i - 1, :], fW)
+LWe = np.dot(LW[i - 1, :], fW)
+
+#for j in range(nR):
+    #RR = Raerod(Ta[i], Ua[i], Za, Zr, ZmR, ZhR, TR[i, j],0)
+    #RR += RsR[i - 1]
+    #HR = Cpd * ra * (TR - Ts_UCM) / RR
+    #LER = Lv * ra * (qR - qa) / RR
+
+    #LER[i - 1, 0] *= WRi[i - 1, 0]
+    #LER[i - 1, -1] *= beR[i - 1]
+
+    #Rcan[i - 1] = Raerod(Ta[i - 1], Ua[i - 1], Za, d, Zmc, Zhc, Tcan[i - 1], Us[i - 1])
+    #Hcan[i - 1] = Cpd * ra[i - 1] * (Tcan[i - 1] - Ta[i - 1]) / Rcan[i - 1]
+    #LEC[i - 1] = Lv * ra[i - 1] * (qcan[i - 1] - qa[i - 1]) / Rcan[i - 1]
+
+        # inside the canyon: wall and ground surfaces
+    #Tcan[i - 1] = (Ta[i - 1] / Rcan[i - 1] + 2 * h * TWe[i - 1] / RW[i - 1] / w + TGe[i - 1] / RG[i - 1]) / (1 / Rcan[i - 1] + 2 * h / RW[i - 1] / w + 1 / RG[i - 1])
+
+
+
+
+# In[162]:
+
+
+#for j in range(nW):
+#     HW = Cpd * ra * (TWd - Tcan) / RW
+
+# for j in range(nG):
+#     HG = Cpd * ra * (TG - Ta) / RG
+
+
+#     qG = qsG
+#     qGe = beG[i - 1] * fG[nG - 1] * qsG[i - 1, nG - 1] + np.dot(WGi[i - 1, :], qsG[i - 1, :nG - 1]) * fG[
+#             :nG - 1]
+#     temp = beG[i - 1] * fG[nG - 1] + np.dot(WGi[i - 1, :], fG[:nG - 1])
+#     qcan[i - 1] = (qa[i - 1] / Rcan[i - 1] + qGe[i - 1] / RG[i - 1]) / (1 / Rcan[i - 1] + temp / RG[i - 1])
+
+#     LEG[i - 1, :] = ra[i - 1] * Lv * (qsG[i - 1, :] - qa[i - 1]) / RG[i - 1]
+#     LEG[i - 1, :nG - 1] *= WGi[i - 1, :]
+#     LEG[i - 1, nG - 1] *= beG[i - 1]
+
+
+        # compute effective heat budgets
+RnR = LR+ SR
+RnW = LW + SW
+RnG = LG + SG
+ReW = np.dot(RnW, fW)
+ReG = np.dot(RnG, fG)
+ReR = np.dot(RnR, fR)
+HRe = np.dot(HR, fR)
+HWe = np.dot(HW, fW)
+HGe = np.dot(HG[i - 1, :], fG)
+LERe = np.dot(LER, fR)
+#LEGe = np.dot(LEG, fG)
+
+
+# In[160]:
+
+
+# check convergence
+#err = [abs(x1 / qW1 - 1), abs(x2 / qR1[i - 1, 0] - 1), abs(x4 / Tcan[i - 1] - 1)]
+#emax = max(err)
+#if emax < tol:
+    #ok = 1
+
+    # check maximum number of iterations
+ # total number of iterations
+day = int(day)
+if day + (i - 1) / 288 <= 31:
+    IRRI[i - 1, 0] = 0.043
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 60:
+    IRRI[i - 1, 0] = 0.037
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 91:
+    IRRI[i - 1, 0] = 0.041
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 121:
+    IRRI[i - 1, 0] = 0.037
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 152:
+    IRRI[i - 1, 0] = 0.045
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 182:
+    IRRI[i - 1, 0] = 0.047
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 213:
+    IRRI[i - 1, 0] = 0.049
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 244:
+    IRRI[i - 1, 0] = 0.105
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 274:
+    IRRI[i - 1, 0] = 0.101
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 305:
+    IRRI[i - 1, 0] = 0.093
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+elif day + (i - 1) / 288 <= 335:
+    IRRI[i - 1, 0] = 0.090
+    WGv[i - 1, 0] += IRRI[i - 1, 0]
+#else:
+    #IRRI[i - 1, 0] = 0.065
+    #WGv[i - 1, 0] += IRRI[i - 1, 0]
+
+# compute final results
+TWd -= KK
+TG -= KK
+TR -= KK
+Tcan -= KK
+Tu = r * TR + w * Tcan
+
+
+# In[84]:
+
+
+# 1-day averaged data
+TGey_UCM = np.zeros(nnd)
+HGy_UCM = np.zeros(nnd)
+HRy_UCM = np.zeros(nnd)
+LEGy_UCM = np.zeros(nnd)
+Tcany_UCM = np.zeros(nnd)
+TRy_UCM = np.zeros(nnd)
+Ty_UCM = np.zeros(nnd)
+Hy_UCM = np.zeros(nnd)
+LEy_UCM = np.zeros(nnd)
+RnRy_UCM = np.zeros(nnd)
+for i in range(1, nnd):
+    start_idx = (i - 1) * npp
+    end_idx = i * npp + 1
+    
+    TGey_UCM[i-1] = np.nanmean(TGe_UCM[start_idx:end_idx])
+    HRy_UCM[i-1] = np.nanmean(HR_UCM[start_idx:end_idx])
+    HGy_UCM[i-1] = np.nanmean(HG_UCM[start_idx:end_idx])
+    LEGy_UCM[i-1] = np.nanmean(LEG_UCM[start_idx:end_idx])
+    Tcany_UCM[i-1] = np.nanmean(Tcan_UCM[start_idx:end_idx])
+    TRy_UCM[i-1] = np.nanmean(TRe_UCM[start_idx:end_idx])
+    Ty_UCM[i-1] = np.nanmean(Ts_UCM[start_idx:end_idx])
+    Hy_UCM[i-1] = np.nanmean(H_UCM[start_idx:end_idx])
+    LEy_UCM[i-1] = np.nanmean(LE_UCM[start_idx:end_idx])
+    RnRy_UCM[i-1] = np.nanmean(RnR_UCM[start_idx:end_idx])
+
+
+# In[85]:
+
+
+Tsy_m = np.zeros(nnd)
+Hy_m = np.zeros(nnd)
+LEy_m = np.zeros(nnd)
+Rny_m = np.zeros(nnd)
+for i in range(1, nnd):
+    start_idx = (i - 1) * ny
+    end_idx = i * ny
+    
+    Tsy_m[i-1] = np.nanmean(TsEC[start_idx:end_idx])
+    Hy_m[i-1] = np.nanmean(HEC[start_idx:end_idx])
+    LEy_m[i-1] = np.nanmean(LEEC[start_idx:end_idx])
+    Rny_m[i-1] = np.nanmean(RnEC[start_idx:end_idx])
+
+
+# In[86]:
+
+
+# Plotting the data
+plt.figure(1)
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+# Plotting
+plt.plot(th, TGe_UCM, 'g', label='TGe_UCM', linewidth=0.5)
+plt.plot(th, Tcan_UCM, 'b', label='Tcan_UCM', linewidth=0.5)
+plt.plot(th, Ts_UCM, 'k', label='Ts_UCM', linewidth=0.5)
+plt.plot(th, TRe_UCM, 'r', label='TRe_UCM', linewidth=0.5)
+
+# Setting labels and limits
+plt.xlabel('Simulation time (day)', fontsize=16, fontname='times')
+plt.ylabel('Temperature (°C)', fontsize=16, fontname='times')
+plt.xlim([0, nd])
+plt.ylim([0, 70])
+
+# Setting font properties
+plt.tick_params(axis='both', which='major', labelsize=16)
+plt.legend(fontsize=16)
+
+# Setting font for the legend
+plt.legend(fontsize=16, frameon=False)
+
+# Show plot
+plt.show()
+
+
+# In[87]:
+
+
+plt.plot(ty, LEy_UCM, 'r', label='LEy_UCM')
+plt.plot(ty, LEy_m, 'k.', label='LEy_m')
+
+plt.ylim([-20, 80])
+plt.xlabel('Simulation time (day)', fontsize=14, fontname='times')
+plt.ylabel('Latent heat fluxes (Wm^-2)', fontsize=14, fontname='times')
+plt.xlim([0, 360])
+plt.xticks(np.arange(0, 361, 30))
+plt.gca().set_fontsize(14)
+plt.gca().set_fontname('times')
+
+plt.legend()
+plt.show()
+
+
+# In[88]:
+
+
+plt.plot(ty, Hy_m, 'k.', label='Hy_m')
+plt.plot(ty, Hy_UCM, 'r', label='Hy_UCM')
+
+plt.ylim([-50, 150])
+plt.xlabel('Simulation time (day)', fontsize=14, fontname='times')
+plt.ylabel('Sensible heat fluxes (Wm^-2)', fontsize=14, fontname='times')
+plt.xlim([0, 360])
+plt.xticks(np.arange(0, 361, 30))
+plt.gca().set_fontsize(14)
+plt.gca().set_fontname('times')
+
+plt.legend()
+plt.show()
+
+
+# In[87]:
+
+
+# Plotting
+plt.plot(ty, Tsy_m, 'k.', label='Tsy_m')
+plt.plot(ty, TRy_UCM, 'r', label='TRy_UCM')
+
+# Set plot limits and labels
+plt.ylim([5, 50])
+plt.xlabel('Simulation time (day)', fontsize=14, fontname='times')
+plt.ylabel('Surface temperature (°C)', fontsize=14, fontname='times')
+plt.xlim([0, 360])
+
+# Customize x-axis ticks
+plt.xticks(np.arange(0, 361, 30))
+
+# Set font size and font name for the plot
+plt.gca().set_fontsize(14)
+plt.gca().set_fontname('times')
+
+# Display legend
+plt.legend()
+
+# Show the plot
+plt.show()
+
+
+# In[89]:
+
+
+# Plotting the data
+plt.figure(1)
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+# Plotting
+plt.plot(th, H_UCM, 'r', label='H_UCM')
+plt.plot(th, LE_UCM, 'g', label='LE_UCM')
+
+# Set plot properties
+plt.xlabel('local time (hour)', fontsize=16, fontname='times')
+plt.ylabel('turbulent heat fluxes (W/m^2)', fontsize=16, fontname='times')
+plt.legend()
+plt.xlim([0, 500])
+plt.grid(True)
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=16, fontname='times')
+plt.yticks(fontsize=16, fontname='times')
+
+# Show the plot
+plt.show()
+
+
+# In[90]:
+
+
+# Plotting the data
+plt.figure(figsize=(10, 6))  # Adjust the figure size for better aesthetics
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+
+# Plotting with reduced line thickness
+plt.plot(th, H_UCM, 'r-', label='H_UCM', linewidth=1)
+plt.plot(th, LE_UCM, 'g-', label='LE_UCM', linewidth=1)
+
+# Set plot properties
+plt.xlabel('Local Time (hour)', fontsize=16, fontweight='bold', fontname='Arial')
+plt.ylabel('Turbulent Heat Fluxes (W/m^2)', fontsize=16, fontweight='bold', fontname='Arial')
+plt.legend(fontsize=14)
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=14, fontname='Arial')
+plt.yticks(fontsize=14, fontname='Arial')
+
+# Set grid properties
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Set axis limits
+plt.xlim([0, 500])
+
+# Add title
+plt.title('Turbulent Heat Fluxes Over Time', fontsize=18, fontweight='bold', fontname='Arial')
+
+# Add annotations, if needed
+# plt.annotate('Your annotation text', xy=(x_coord, y_coord), xytext=(x_text, y_text),
+#              arrowprops=dict(facecolor='black', shrink=0.05))
+
+# Show the plot
+plt.tight_layout()  # Adjust layout for better spacing
+plt.show()
+
+
+# In[91]:
+
+
+# Plotting the data
+plt.figure(figsize=(10, 6))  # Adjust the figure size for better aesthetics
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+
+# Plotting with reduced line thickness
+plt.plot(th, Tcan_UCM, 'r-', label='Tcan_UCM', linewidth=1)
+
+# Set plot properties
+plt.xlabel('Time', fontsize=16, fontweight='bold', fontname='Arial')
+plt.ylabel('Temperature', fontsize=16, fontweight='bold', fontname='Arial')
+plt.legend(fontsize=14)
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=14, fontname='Arial')
+plt.yticks(fontsize=14, fontname='Arial')
+
+# Set grid properties
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Set axis limits
+plt.xlim([0, 500])
+
+# Add title
+plt.title('Canyon air temperature', fontsize=18, fontweight='bold', fontname='Arial')
+
+# Add annotations, if needed
+# plt.annotate('Your annotation text', xy=(x_coord, y_coord), xytext=(x_text, y_text),
+#              arrowprops=dict(facecolor='black', shrink=0.05))
+
+# Show the plot
+plt.tight_layout()  # Adjust layout for better spacing
+plt.show()
+
+
+# In[92]:
+
+
+# Data
+plt.plot(th, RnR_UCM, 'r', label='Predicted Rn', linewidth=1)
+plt.plot(tm, RnEC, 'r.', label='Measured Rn', linewidth=1)
+plt.plot(th, H_UCM, 'k', label='Predicted H', linewidth=1)
+plt.plot(tm, HEC, 'k.', label='Measured H', linewidth=1)
+plt.plot(th, LE_UCM, 'g', label='Predicted LE', linewidth=1)
+plt.plot(tm, LEEC, 'g.', label='Measured LE', linewidth=1)
+
+# Labels and Legends
+plt.xlabel('Local Time (hour)', fontsize=16, fontweight='bold', fontname='Arial')
+plt.ylabel('Heat Fluxes (W/m^2)', fontsize=16, fontweight='bold', fontname='Arial')
+plt.legend(loc='upper right')
+
+# Set grid properties
+plt.grid(True, linestyle='--', alpha=0.7)
+# Axis Limits
+plt.xlim([0, 500])
+plt.ylim([-200, 800])
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=14, fontname='Arial')
+plt.yticks(fontsize=14, fontname='Arial')
+
+# Add title
+#plt.title('Name?', fontsize=18, fontweight='bold', fontname='Arial')
+
+# Add annotations, if needed
+# plt.annotate('Your annotation text', xy=(x_coord, y_coord), xytext=(x_text, y_text),
+#              arrowprops=dict(facecolor='black', shrink=0.05))
+# Show the plot
+plt.tight_layout()  # Adjust layout for better spacing
+plt.show()
+
+
+# In[93]:
+
+
+# Set the figure size
+plt.figure(figsize=(10, 6))
+
+# Data with adjusted linewidth
+plt.plot(th, RnR_UCM, 'r', label='Predicted Rn', linewidth=1)
+plt.plot(tm, RnEC, 'r.', label='Measured Rn', linewidth=1)
+plt.plot(th, H_UCM, 'k', label='Predicted H', linewidth=1)
+plt.plot(tm, HEC, 'k.', label='Measured H', linewidth=1)
+plt.plot(th, LE_UCM, 'g', label='Predicted LE', linewidth=1)
+plt.plot(tm, LEEC, 'g.', label='Measured LE', linewidth=1)
+
+# Labels and Legends
+plt.xlabel('Local Time (hour)', fontsize=16, fontweight='bold', fontname='Arial')
+plt.ylabel('Heat Fluxes (W/m^2)', fontsize=16, fontweight='bold', fontname='Arial')
+plt.legend(loc='upper right')
+
+# Set grid properties
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Axis Limits
+plt.xlim([0, 500])
+plt.ylim([-200, 800])
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=14, fontname='Arial')
+plt.yticks(fontsize=14, fontname='Arial')
+
+# Add title if needed
+# plt.title('Your Title', fontsize=18, fontweight='bold', fontname='Arial')
+
+# Add annotations, if needed
+# plt.annotate('Your annotation text', xy=(x_coord, y_coord), xytext=(x_text, y_text),
+#              arrowprops=dict(facecolor='black', shrink=0.05))
+
+# Show the plot
+plt.tight_layout()  # Adjust layout for better spacing
+plt.show()
+
+
+# In[94]:
+
+
+th = np.arange(0, 367, 300/3600/24) # time in hours
+th = th[:105409]
+
+plt.plot(th, HG_UCM, 'r', label='Predicted HG_UCM', linewidth=0.8)
+plt.plot(th, LEG_UCM, 'g', label='Predicted LEG_UCM', linewidth=0.8)
+plt.plot(th, H_UCM, 'b', label='Predicted H_UCM', linewidth=0.8)
+plt.plot(th, LE_UCM, 'k', label='Predicted LE_UCM', linewidth=0.8)
+
+plt.xlabel('Simulation time (day)', fontsize=16, fontname='times')
+plt.ylabel('Turbulent heat fluxes (W/m^2)', fontsize=16, fontname='times')
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=14, fontname='Arial')
+plt.yticks(fontsize=14, fontname='Arial')
+
+# Set grid properties
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Set axis limits
+plt.xlim([0, th[-1] / 24])  # Set the x-axis limit based on the last value in th
+plt.ylim([-200, 400])
+
+# Add legend
+plt.legend(fontsize=12)
+plt.legend(loc='upper right')
+# Add title, if needed
+# plt.title('Your Title', fontsize=18, fontname='times')
+
+# Show the plot
+plt.tight_layout()  # Adjust layout for better spacing
+plt.show()
+
+
+# In[95]:
+
+
+th = np.arange(0, 367, 300/3600/24) # time in hours
+th = th[:105409]
+# Set the figure size
+
+# Data with adjusted linewidth
+plt.plot(ty, Rny_m, 'r', label='Predicted Rn', linewidth=1)
+plt.plot(ty, RnRy_UCM, 'k.', label='Measured Rn', linewidth=1)
+# Labels and Legends
+plt.xlabel('Simulation time (day)', fontsize=16, fontname='times')
+plt.ylabel('net radiation (W/m^2)', fontsize=16, fontname='times')
+plt.xlim([0, 360])
+
+# Customize x-axis ticks
+plt.xticks(np.arange(0, 361, 30))
+
+# Set font size and font name for the plot
+plt.gca().set_fontsize(14)
+plt.gca().set_fontname('times')
+
+# Display legend
+plt.legend()
+
+# Show the plot
+plt.show()
+
