@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
 
-@author: negar_hofism7
-"""
 #example:
-
-from greet.py import SayUCMPhoenix
-from functions.py import Green
-from UCMPhoenix.py import plt
+from greet import SayASLUMpy
+from functions import Green
+from ASLUMpy import Green
 
