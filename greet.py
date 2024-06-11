@@ -1,6 +1,5 @@
 
-"""
-@author: negar_hofism7
-"""
-def SayUCMPhoenix(name):
-    print("UCMPhoenix ", name)
+#example:
+from greet import SayASLUMpy
+from functions import Green
+from ASLUMpy import Green
