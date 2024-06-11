@@ -1,8 +1,9 @@
 
-# UCMPhoenix Package (Urban Climate Analysis)
+#
+# ASLUMpy Package (Urban Climate Analysis)
 
 ## Overview
-This Python package is designed for comprehensive climate data analysis - UCM Phoenix. It provides tools to process, analyze, and visualize climate data from various sources. This package is ideal for climate researchers, environmental scientists, and data analysts who are working on climate change studies.
+This Python package is designed for comprehensive climate data analysis - ASLUMpy. It provides tools to process, analyze, and visualize climate data from various sources. This package is ideal for climate researchers, environmental scientists, and data analysts who are working on climate change studies.
 
 ## Features
 - **Data Processing**: Functions to clean and prepare raw climate data.
@@ -12,8 +13,73 @@ This Python package is designed for comprehensive climate data analysis - UCM Ph
 
 ## Installation
 
+### Requirements for Installing Packages
+Before installing ASLUMpy, ensure you meet the following requirements:
+
+- **Python**: Make sure you have Python installed and available from the command line. You can check this by running:
+
+    ```bash
+    py --version
+    ```
+
+    You should see output like `Python 3.6.3`. If you do not have Python, please install the latest 3.x version from [python.org](https://www.python.org/).
+
+- **pip**: Ensure you have `pip` available by running:
+
+    ```bash
+    py -m pip --version
+    ```
+
+    If `pip` is not installed, you can bootstrap it from the standard library:
+
+    ```bash
+    py -m ensurepip --default-pip
+    ```
+
+    If this does not work, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
+
+    ```bash
+    python get-pip.py
+    ```
+
+    Be cautious if you’re using a Python install managed by your operating system or another package manager.
+
+### Installing ASLUMpy
+
+To install ASLUMpy, use the following command:
+
 ```bash
-pip install UCMPhoenix
+pip install ASLUM.py
+```
+
+### Creating Virtual Environments
+It is recommended to use virtual environments to manage your dependencies. Virtual environments allow Python packages to be installed in an isolated location for a particular application, rather than being installed globally.
+
+To create a virtual environment, use the following command:
+
+```bash
+py -m venv tutorial_env
+```
+
+Activate the virtual environment:
+
+- On Unix/macOS:
+
+    ```bash
+    source tutorial_env/bin/activate
+    ```
+
+- On Windows:
+
+    ```bash
+    tutorial_env\Scripts\activate
+    ```
+
+### Ensuring Dependencies Are Up to Date
+To ensure `pip`, `setuptools`, and `wheel` are up to date, run:
+
+```bash
+py -m pip install --upgrade pip setuptools wheel
 ```
 
 ## Usage
@@ -21,10 +87,12 @@ pip install UCMPhoenix
 Here's a quick example of how to use this package:
 
 ```python
-from UCMPHoenix import pickle, plot
+from ASLUMpy import pickle, plot
 
 # Load your data
 data1 = pickle.load('path_to_your_data.pkl')
+# or
+data2 = sio.loadmat(r'your_directory.mat')
 
 # Analyze data
 analysis_results = data.analyze_trends()
@@ -35,21 +103,59 @@ plot.show()
 ```
 
 ## Documentation
-For full documentation, visit [your documentation site URL].
+Comprehensive documentation for the ASLUMpy package is available, covering all aspects of its functionality, including installation, usage, and references. The documentation is designed to help you get the most out of ASLUMpy, whether you're a beginner or an experienced user.
+
+User Guide
+The user guide provides a detailed walkthrough of ASLUMpy's features and functionalities, including step-by-step instructions on how to perform common tasks.
+
+Installation Guide
+Detailed instructions on how to install ASLUMpy on various platforms. This section covers:
+
+System requirements
+Installing dependencies
+Setting up a virtual environment
+Installing ASLUMpy via pip
+Quick Start
+
+Get up and running quickly with ASLUMpy by following our quick start guide. This section includes:
+
+Basic usage examples
+Loading and processing climate data
+Performing statistical analyses
+Visualizing results with graphs
+
+Reference
+In-depth documentation of ASLUMpy's reference, including detailed descriptions of modules, classes, functions, and their parameters. This section is essential for developers looking to integrate ASLUMpy into their own projects or extend its functionality.
+
+
+FAQs and Troubleshooting
+Answers to common questions and solutions to common issues that users might encounter, it can resolve their problems and make the most of ASLUMpy.
+
+Release Notes and Changelog
+Keep track of what's new in each release of ASLUMpy. The release notes and changelog provide detailed information on new features, improvements, bug fixes, and any breaking changes.
+
+Examples
+A collection of example scripts and notebooks demonstrating various features of ASLUMpy. These examples are a great way to see the package in action and understand how to apply it to your own data.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
 
 ## Authors
-- **Your Name** - *Initial work* - [Negarasu](https://github.com/Negarasu)
+- **Your Name** - *Initial work* - Negar Rahmatollahi [Negarasu](https://github.com/Negarasu) Ting Sun, Zhihua Wang, Yihang Wang.
 
 ## Acknowledgments
-- Hat tip to anyone whose code was used
-- Inspiration
-- etc
+
+- **Contributors and Collaborators**: A huge thanks to all the developers, researchers, and collaborators who have contributed to this project by providing feedback, code, and valuable insights.
+- **Open Source Community**: Gratitude to the Python and open-source community for providing essential tools and libraries that made this project possible.
+- **Climate Data Providers**: Thanks to various climate data repositories for providing accessible and high-quality data.
+- **Inspiration**: Inspired by numerous climate research projects and tools that paved the way for innovative data analysis and visualization techniques.
+- **Documentation and Tutorials**: Special thanks to the authors of comprehensive Python and data science documentation and tutorials that helped shape this project.
+- **Support and Feedback**: Heartfelt appreciation to all users who have provided feedback, reported issues, and suggested improvements, making this project better for everyone.
+- **Arizona State University**: Special thanks to Arizona State University for their support and resources that have been invaluable to this project's development.
+- **Funding and Support**: Acknowledgment to any institutions, grants, or organizations that have supported the development and maintenance of this project.
 
 ## Contact
-For any questions, please contact [nrahmato@asu.edu]).
+For any questions, please contact [nrahmato@asu.edu](mailto:nrahmato@asu.edu),zhwang@asu.edu.
 
 ## Version History
 - 0.1
