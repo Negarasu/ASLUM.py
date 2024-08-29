@@ -147,10 +147,10 @@ Detailed instructions on how to install ASLUM.py on various platforms. This sect
 System requirements
 Installing dependencies
 Setting up a virtual environment
-Installing ASLUMpy via pip
+Installing ASLUM.py via pip
 Quick Start
 
-Get up and running quickly with ASLUMpy by following our quick start guide. This section includes:
+Get up and running quickly with ASLUM.py by following our quick start guide. This section includes:
 
 Basic usage examples
 Loading and processing climate data
