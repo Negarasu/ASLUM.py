@@ -84,13 +84,21 @@ py -m pip install --upgrade pip setuptools wheel
 ### Installing ASLUMpy by GitHub
 Open your `terminal` or `command prompt` and use git to clone the repository to your local machine:
 
-git clone `https://github.com/Negarasu/PythonUCM`
+```bash
+git clone https://github.com/Negarasu/PythonUCM
+```
 
 Navigate to the Directory: Change to the directory containing the cloned repository:
-cd `repository`
+
+```bash
+cd repository
+```
 
 Now, you can install it using pip. Run the following command in the terminal:
+
+```bash
 pip install ASLUM.py
+```
 
 ## Usage
 
