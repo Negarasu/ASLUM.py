@@ -188,7 +188,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) f
 - **Funding and Support**: Acknowledgment to any institutions, grants, or organizations that have supported the development and maintenance of this project.
 
 ## Contact
-For any questions, please contact [nrahmato@asu.edu](mailto:nrahmato@asu.edu),zhwang@asu.edu.
+For any questions, please contact zhwang@asu.edu and nrahmato@asu.edu
 
 ## Version History
 - 0.1
