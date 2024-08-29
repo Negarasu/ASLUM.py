@@ -81,7 +81,7 @@ To ensure `pip`, `setuptools`, and `wheel` are up to date, run:
 ```bash
 py -m pip install --upgrade pip setuptools wheel
 ```
-### Installing ASLUMpy by GitHub
+### Installing ASLUM.py by GitHub
 Open your `terminal` or `command prompt` and use git to clone the repository to your local machine:
 
 ```bash
@@ -105,19 +105,33 @@ pip install ASLUM.py
 Here's a quick example of how to use this package:
 
 ```python
-from ASLUMpy import pickle, plot
+from scipy.io import loadmat
+import matplotlib.pyplot as plt
 
 # Load your data
-data1 = pickle.load('path_to_your_data.pkl')
-# or
-data2 = sio.loadmat(r'your_directory.mat')
+Phoenix_calibrate_Pre3 = sio.loadmat(r'your directory.mat)
 
-# Analyze data
-analysis_results = data.analyze_trends()
+# Analyze and plot data
+plt.figure(1)
+th = np.arange(0, 367, 300/3600/24) * 24   # time in hours
+th = th[:105409]
+# Plotting
+plt.plot(th, H_UCM, 'r', label='H_UCM')
+plt.plot(th, LE_UCM, 'g', label='LE_UCM')
 
-# Plot results
-plot = ClimatePlot(analysis_results)
-plot.show()
+# Set plot properties
+plt.xlabel('local time (hour)', fontsize=16, fontname='times')
+plt.ylabel('turbulent heat fluxes (W/m^2)', fontsize=16, fontname='times')
+plt.legend()
+plt.xlim([0, 500])
+plt.grid(True)
+
+# Set font size and font name for ticks
+plt.xticks(fontsize=16, fontname='times')
+plt.yticks(fontsize=16, fontname='times')
+
+# Show the plot
+plt.show()
 ```
 
 ## Documentation
