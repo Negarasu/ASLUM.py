@@ -3,7 +3,7 @@
 # ASLUMpy Package (Urban Climate Analysis)
 
 ## Overview
-This Python package is designed for comprehensive climate data analysis - ASLUMpy. It provides tools to process, analyze, and visualize climate data from various sources. This package is ideal for climate researchers, environmental scientists, and data analysts who are working on climate change studies.
+This Python package is designed for comprehensive climate data analysis - ASLUM.py. It provides tools to process, analyze, and visualize climate data from various sources. This package is ideal for climate researchers, environmental scientists, and data analysts who are working on climate change studies.
 
 ## Features
 - **Data Processing**: Functions to clean and prepare raw climate data.
@@ -14,7 +14,7 @@ This Python package is designed for comprehensive climate data analysis - ASLUMp
 ## Installation
 
 ### Requirements for Installing Packages
-Before installing ASLUMpy, ensure you meet the following requirements:
+Before installing ASLUM.py, ensure you meet the following requirements:
 
 - **Python**: Make sure you have Python installed and available from the command line. You can check this by running:
 
@@ -44,9 +44,9 @@ Before installing ASLUMpy, ensure you meet the following requirements:
 
     Be cautious if you’re using a Python install managed by your operating system or another package manager.
 
-### Installing ASLUMpy
+### Installing ASLUM.py
 
-To install ASLUMpy, use the following command:
+To install ASLUM.py, use the following command:
 
 ```bash
 pip install ASLUM.py
@@ -143,7 +143,7 @@ User Guide
 The user guide provides a detailed walkthrough of ASLUMpy's features and functionalities, including step-by-step instructions on how to perform common tasks.
 
 Installation Guide
-Detailed instructions on how to install ASLUMpy on various platforms. This section covers:
+Detailed instructions on how to install ASLUM.py on various platforms. This section covers:
 
 System requirements
 Installing dependencies
