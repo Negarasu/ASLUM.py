@@ -84,7 +84,7 @@ py -m pip install --upgrade pip setuptools wheel
 Open your `terminal` or `command prompt` and use git to clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/Negarasu/PythonUCM
+git clone https://github.com/Negarasu/ASLUM.py
 ```
 
 Navigate to the Directory: Change to the directory containing the cloned repository:
