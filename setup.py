@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name='ASLUM.py',
     version='0.4',
-    author='NegarRahmatollahi, ZhihuaWang, TingSun',
+    author='NegarRahmatollahi, TingSun, ZhihuaWang, YihangWang',
     author_email='nrahmato@asu.edu',
     license='MIT',
     description='Description of your package',
