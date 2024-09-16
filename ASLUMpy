@@ -113,31 +113,6 @@ getcontext().prec = 20
 # Ua_in = data3['Ua_in']
 # pd_in = data3['pd_in']
 
-# with open(r'yourdirectory\Phoenix_UCM1.pkl', 'rb') as file:
-#     data4 = pickle.load(file)
-# WG_UCM = data4['WG_UCM']
-# WR_UCM = data4['WR_UCM']
-# LER_UCM = data4['LER_UCM']
-# LW_UCM = data4['LW_UCM']
-# TG_UCM = data4['TG_UCM']
-# TR_UCM = data4['TR_UCM']
-# Tcan_UCM = data4['Tcan_UCM']
-
-# with open(r'yourdirectory\Phoenix_UCM2.pkl', 'rb') as file:
-#     data5 = pickle.load(file)
-# #TWd = data5['TWd']
-# #WRv = data5['WRv']
-# #WGv = data5['WGv']
-# ReR = data5['ReR']
-# Tcan = data5['Tcan']
-# Ta = data5['Ta']
-# TR = data5['TR']
-# RnR_UCM = data5['RnR_UCM']
-# Hu = data5['Hu']
-# LEu = data5['LEu']
-# qcan = data5['qcan']
-
-
 # In[9]:
 
 
