@@ -1,5 +1,5 @@
+# src/ASLUMpy/greet.py
 
-#example:
-from greet import SayASLUMpy
-from functions import Green
-from ASLUMpy import Green
+def greet():
+    print("Hello from ASLUMpy!")
+
