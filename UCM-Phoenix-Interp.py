@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
+from UCM-Phoenix-Interp import interp
 import numpy as np
 
 def interp(x, t, T):
