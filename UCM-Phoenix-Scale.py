@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
+# src/ASLUMpy/UCM-Phoenix-Vec2mat.py
 
-# In[1]:
-
-
+from .UCM-Phoenix-Scale import scale  # Import scale from UCM-Phoenix-Scale.py
 import numpy as np
 def scale(x, t, t_scale):
     x_new = np.zeros(len(t_scale))
