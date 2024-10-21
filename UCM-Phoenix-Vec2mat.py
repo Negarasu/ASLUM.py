@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
 
-# In[2]:
 
 from UCM-Phoenix-Vec2mat import vec2mat
 import numpy as np
