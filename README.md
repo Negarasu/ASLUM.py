@@ -12,6 +12,7 @@ This Python package is designed for comprehensive climate data analysis - ASLUM.
 
 ## Features
 **Structure**:
+```bash
 ASLUM.py/                # Root directory (main project folder)
 │
 ├── setup.py             # Package configuration script
@@ -33,7 +34,7 @@ ASLUM.py/                # Root directory (main project folder)
         ├── UCM-Phoenix-Scale.py  # Scaling logic
         ├── UCM-Phoenix-Interp.py # Interpolation logic
         └── UCM-Phoenix-Vec2mat.py # Vector-matrix conversion logic
-
+    ```
 
 ## Installation
 
