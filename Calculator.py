@@ -1,24 +1,11 @@
-# -*- coding: utf-8 -*-
-"""
-@author: negar_hofism7
-"""
-# calculator.py
+# src/ASLUMpy/Calculator.py
 
-def add(x, y):
-    """Add Function"""
-    return x + y
+from .functions import Keff  # Import Keff from functions.py
 
-def subtract(x, y):
-    """Subtract Function"""
-    return x - y
+def main():
+    result = Keff(0.5)
+    print(f"Keff result: {result}")
 
-def multiply(x, y):
-    """Multiply Function"""
-    return x * y
-
-def divide(x, y):
-    """Divide Function"""
-    if y == 0:
-        raise ValueError("Can not divide by zero!")
-    return x / y
+if __name__ == "__main__":
+    main()
 
