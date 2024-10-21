@@ -166,7 +166,7 @@ User Guide
 The user guide provides a detailed walkthrough of ASLUMpy's features and functionalities, including step-by-step instructions on how to perform common tasks.
 
 Installation Guide
-Detailed instructions on how to install ASLUM.py on various platforms. This section covers:
+Detailed instructions on how to install **ASLUM.py** on various platforms. This section covers:
 
 System requirements
 Installing dependencies
@@ -174,7 +174,7 @@ Setting up a virtual environment
 Installing ASLUM.py via pip
 Quick Start
 
-Get up and running quickly with ASLUM.py by following our quick start guide. This section includes:
+Get up and running quickly with ASLUMpy by following our quick start guide. This section includes:
 
 Basic usage examples
 Loading and processing climate data
