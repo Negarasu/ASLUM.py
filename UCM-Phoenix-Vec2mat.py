@@ -3,7 +3,7 @@
 
 # In[2]:
 
-
+from UCM-Phoenix-Vec2mat import vec2mat
 import numpy as np
 
 def vec2mat(vec, matCol, padding=None):
