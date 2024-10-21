@@ -34,9 +34,7 @@ ASLUM.py/                # Root directory (main project folder)
         ├── UCM-Phoenix-Scale.py  # Scaling logic
         ├── UCM-Phoenix-Interp.py # Interpolation logic
         └── UCM-Phoenix-Vec2mat.py # Vector-matrix conversion logic
-    ```
-
-## Installation
+  ```
 
 ### Requirements for Installing Packages
 Before installing ASLUM.py, ensure you meet the following requirements:
