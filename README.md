@@ -10,6 +10,31 @@ This Python package is designed for comprehensive climate data analysis - ASLUM.
 - **Visualization**: Capabilities to create informative charts and maps to represent climate trends and anomalies.
 - **Data Sources Integration**: Easily integrates with popular climate data APIs and repositories.
 
+## Features
+**Structure**:
+ASLUM.py/                # Root directory (main project folder)
+│
+├── setup.py             # Package configuration script
+├── requirements.txt     # Dependencies (if any)
+├── README.md            # Documentation
+├── data/                # Data folder (stores datasets or input files)
+│   ├── example_data
+├── Function/            # Additional scripts or reusable functions
+│   ├── functions.ipynb
+├── test/                # Unit tests and test scripts
+│   ├── test_functions.py
+│   ├── test_calculator.py
+│   └── src/                 # Source code directory (holds the main package)
+    └── ASLUMpy/         # Main package folder
+        ├── __init__.py  # Makes this folder a package
+        ├── functions.py # Core functions
+        ├── Calculator.py # Calculation logic
+        ├── greet.py     # Simple greetings
+        ├── UCM-Phoenix-Scale.py  # Scaling logic
+        ├── UCM-Phoenix-Interp.py # Interpolation logic
+        └── UCM-Phoenix-Vec2mat.py # Vector-matrix conversion logic
+
+
 ## Installation
 
 ### Requirements for Installing Packages
