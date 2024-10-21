@@ -10,8 +10,8 @@ This Python package is designed for comprehensive climate data analysis - ASLUM.
 - **Visualization**: Capabilities to create informative charts and maps to represent climate trends and anomalies.
 - **Data Sources Integration**: Easily integrates with popular climate data APIs and repositories.
 
-## Features
-**Structure**:
+## Structure
+
 ```bash
 ASLUM.py/                # Root directory (main project folder)
 │
