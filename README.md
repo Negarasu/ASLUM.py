@@ -161,10 +161,10 @@ plt.show()
 ```
 
 ## Documentation
-Comprehensive documentation for the ASLUMpy package is available, covering all aspects of its functionality, including installation, usage, and references. The documentation is designed to help you get the most out of ASLUMpy, whether you're a beginner or an experienced user.
+Comprehensive documentation for the ASLUM-Py package is available, covering all aspects of its functionality, including installation, usage, and references. The documentation is designed to help you get the most out of ASLUM-Py, whether you're a beginner or an experienced user.
 
 User Guide
-The user guide provides a detailed walkthrough of ASLUMpy's features and functionalities, including step-by-step instructions on how to perform common tasks.
+The user guide provides a detailed walkthrough of ASLUM-Py's features and functionalities, including step-by-step instructions on how to perform common tasks.
 
 Installation Guide
 Detailed instructions on how to install **ASLUM.py** on various platforms. This section covers:
@@ -175,7 +175,7 @@ Setting up a virtual environment
 Installing **ASLUM.py** via pip
 Quick Start
 
-Get up and running quickly with ASLUMpy by following our quick start guide. This section includes:
+Get up and running quickly with ASLUM-Py by following our quick start guide. This section includes:
 
 Basic usage examples
 Loading and processing climate data
@@ -183,17 +183,17 @@ Performing statistical analyses
 Visualizing results with graphs
 
 Reference
-In-depth documentation of ASLUMpy's reference, including detailed descriptions of modules, classes, functions, and their parameters. This section is essential for developers looking to integrate ASLUMpy into their own projects or extend its functionality.
+In-depth documentation of ASLUM-Py's reference, including detailed descriptions of modules, classes, functions, and their parameters. This section is essential for developers looking to integrate ASLUM-Py into their own projects or extend its functionality.
 
 
 FAQs and Troubleshooting
-Answers to common questions and solutions to common issues that users might encounter, it can resolve their problems and make the most of ASLUMpy.
+Answers to common questions and solutions to common issues that users might encounter, it can resolve their problems and make the most of ASLUM-Py.
 
 Release Notes and Changelog
-Keep track of what's new in each release of ASLUMpy. The release notes and changelog provide detailed information on new features, improvements, bug fixes, and any breaking changes.
+Keep track of what's new in each release of ASLUM-Py. The release notes and changelog provide detailed information on new features, improvements, bug fixes, and any breaking changes.
 
 Examples
-A collection of example scripts and notebooks demonstrating various features of ASLUMpy. These examples are a great way to see the package in action and understand how to apply it to your own data.
+A collection of example scripts and notebooks demonstrating various features of ASLUM-Py. These examples are a great way to see the package in action and understand how to apply it to your own data.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
