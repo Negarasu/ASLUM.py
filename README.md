@@ -26,7 +26,7 @@ ASLUM.py/                # Root directory (main project folder)
 │   ├── test_functions.py
 │   ├── test_calculator.py
 │   └── src/                 # Source code directory (holds the main package)
-    └── ASLUMpy/         # Main package folder
+    └── ASLUM/         # Main package folder
         ├── __init__.py  # Makes this folder a package
         ├── functions.py # Core functions
         ├── Calculator.py # Calculation logic
