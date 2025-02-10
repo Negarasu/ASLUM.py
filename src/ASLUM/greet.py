@@ -1,5 +1,5 @@
-# src/ASLUMpy/greet.py
+# src/ASLUM/greet.py
 
 def greet():
-    print("Hello from ASLUMpy!")
+    print("Hello from ASLUM!")
 
