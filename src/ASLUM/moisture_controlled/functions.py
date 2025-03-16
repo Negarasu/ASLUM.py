@@ -1,0 +1,905 @@
+# -*- coding: utf-8 -*-
+"""Functions.ipynb
+"""
+
+import numpy as np
+import math
+from scipy import special
+import pandas as pd
+from datetime import datetime, timedelta
+from main import Constants, UrbanCanyon
+import scipy.io
+from scipy.special import erfc
+import os
+import sys
+
+# Initialize meteorological forcing parameters
+@staticmethod
+    def atmospheric_forcing():
+        """Initialize atmospheric forcing parameters"""
+        nd = 366
+        dt = 300  # Time interval in seconds
+        th = np.arange(0, nd + dt / 3600 / 24, dt / 3600 / 24) * 24  # Time vector in hours
+        th = th.reshape(-1, 1)  # Convert to column vector
+        nt = len(th)  # Number of time steps
+        tS = th  # Local time (same as standard time)
+
+        Sq = np.zeros((nt, 1))  # Diffusive
+        beR = np.ones((nt, 1))  # Evaporation efficiency coefficient for roof
+        beG = np.ones((nt, 1))  # Evaporation efficiency coefficient for green areas
+        RoR = np.zeros((nt, UrbanCanyon.nR))  # Roof surface runoff
+        RoG = np.zeros((nt, UrbanCanyon.nG))  # Ground runoff
+
+        return th, nt, tS, Sq, beR, beG, RoR, RoG
+
+@staticmethod
+def Viewfac():
+    """Compute view factors for a street canyon using class attributes."""
+    h, w = UrbanCanyon.h, UrbanCanyon.w  # Get class attributes
+
+    FSG = np.sqrt(1 + (h / w) ** 2) - h / w
+    FGS = FSG
+    FWW = np.sqrt(1 + (w / h) ** 2) - w / h
+    FGW = (1 - FGS) / 2
+    FWG = (1 - FWW) / 2
+    FWS = FWG
+
+    return FSG, FGS, FWW, FGW, FWG, FWS
+if __name__ == "__main__":
+    # Call atmospheric forcing function
+    th, nt, Sq, beR, beG, RoR, RoG = atmospheric_forcing()
+
+def viewfac_tree():
+    """
+    Compute view factors for street canyons with shade trees.
+
+    Uses UrbanCanyon parameters for automatic calculations.
+
+    Returns:
+        FGS : float
+            View factor from ground to sky.
+        FWW : float
+            View factor from wall to wall.
+        FGW : float
+            View factor from ground to wall.
+        FWG : float
+            View factor from wall to ground.
+        FWS : float
+            View factor from wall to sky.
+    """
+
+    # Access building height and road width from UrbanCanyon
+    H = UrbanCanyon.H  # Building height
+    W = UrbanCanyon.W  # Road width
+
+    # Tree Parameters (Automatically Calculated)
+    rttt = 0.15 * UrbanCanyon.w  # Tree ring radius (depends on normalized road width)
+    dt = 0.25  # Distance of tree to nearest wall
+    ht = 2.5  # Height of tree crown center
+
+    NMC = 10000  # Number of samples in Monte Carlo simulation
+    zc = ht  # Vertical location of center of tree crown
+    xc = dt  # Horizontal location of the center of tree crown
+    nF = np.zeros((5, 5))  # Bundle number matrix
+
+    for i in range(NMC):
+        Reta = np.random.rand()
+        Rtheta = np.random.rand()
+        theta = 2 * np.pi * Rtheta
+        eta = np.arcsin(np.sqrt(Reta))
+        Rx = np.random.rand()
+        Rz = np.random.rand()  # Random point of emission from canyon facets
+        Re = np.random.rand()  # Emission from tree
+        Xe = W * Rx
+        Ze = H * Rz  # Physical coordinates
+        Xet = xc + rttt * np.cos(2 * np.pi * Re)
+        Zet = zc + rttt * np.sin(2 * np.pi * Re)  # Tree emission
+
+        # Compute coordinates of incident points
+        xsg = Xe + H * np.tan(eta) * np.cos(theta)
+        xgs = xsg
+        zww = Ze + W * np.tan(eta) * np.cos(theta)
+        zgw = Xe / np.tan(eta) / np.cos(theta)
+        zsw = zgw
+        xwg = Ze / np.tan(eta) / np.cos(theta)
+        xws = xwg
+
+        dtw = xc - rttt / 2
+        dtg = zc - rttt / 2
+        dts = H - zc + rttt / 2
+        dtt = W - 2 * dtw + rttt
+        dtw2 = W - 2 * xc + rttt
+        xtg = Xet + dtg * np.tan(eta) * np.cos(theta)
+        xts = Xet + dts * np.tan(eta) * np.cos(theta)
+        ztw = Zet + dtw * np.tan(eta) * np.cos(theta)
+        ztw2 = Zet + dtw2 * np.tan(eta) * np.cos(theta)  # Far end wall
+        ztt = Zet + dtt * np.tan(eta) * np.cos(theta)
+
+        zwt = Ze + dtw * np.tan(eta) * np.cos(theta)
+        xwt = Ze / np.tan(eta) / np.cos(theta)
+        xgt = Xe + dtg * np.tan(eta) * np.cos(theta)
+        xst = Xe + dts * np.tan(eta) * np.cos(theta)
+        zgt = Xe / np.tan(eta) / np.cos(theta)
+        zst = zgt
+
+        bst = (zst >= max(0, zc - rttt) and zst <= min(H, zc + rttt)) or \
+              (xst >= max(0, xc - rttt) and xst <= min(W, xc + rttt))
+        if bst:
+            nF[0, 3] += 1
+        if not bst and 0 <= xsg <= W:
+            nF[0, 1] += 1
+
+        bgt = (zgt >= max(0, zc - rttt) and zgt <= min(H, zc + rttt)) or \
+              (xgt >= max(0, xc - rttt) and xgt <= min(W, xc + rttt))
+        if bgt:
+            nF[1, 3] += 1
+        if not bgt and 0 <= xgs <= W:
+            nF[1, 0] += 1
+
+        if not bst and 0 <= zsw <= H:
+            nF[0, 2] += 1
+        if not bgt and 0 <= zgw <= H:
+            nF[1, 2] += 1
+
+        bwt = (zwt >= max(0, zc - rttt) and zwt <= min(H, zc + rttt)) or \
+              (xwt >= max(0, xc - rttt) and xwt <= min(W, xc + rttt))
+        if bwt:
+            nF[2, 3] += 1
+        if not bwt and 0 <= zww <= H:
+            nF[2, 2] += 1
+
+        if not bwt and 0 <= xws <= W:
+            nF[2, 0] += 1
+        if not bwt and 0 <= xwg <= W:
+            nF[2, 1] += 1
+
+        if 0 <= xtg <= W:
+            nF[3, 1] += 1
+        if 0 <= xts <= W:
+            nF[3, 0] += 1
+        if 0 <= ztw <= H:
+            nF[3, 2] += 1
+        if 0 <= ztw2 <= H:
+            nF[4, 4] += 1
+
+        if H - zc - rttt <= ztt <= H - zc + rttt:
+            nF[3, 3] += 1
+
+    vF = nF / NMC
+    vF[3, :] = vF[3, :] / 2  # Accounts for the symmetry of emission from trees
+    vF[4, 4] = vF[4, 4] / 2
+    vF[3, 2] = (vF[3, 2] + vF[4, 4]) / 2
+
+    FGS = vF[1, 0]
+    FWW = vF[2, 2]
+    FGW = vF[1, 2]
+    FWG = vF[2, 1]
+    FWS = vF[2, 0]
+
+    return FGS, FWW, FGW, FWG, FWS
+
+def Keff(n):
+    """
+    Compute effective thermal conductivity in solid layers.
+
+    Parameters:
+        n : int
+            Number of layers.
+
+    Returns:
+        kb : numpy array
+            Effective thermal conductivity for each layer.
+    """
+
+    # Access layer properties from UrbanCanyon class
+    d = UrbanCanyon.dW  # Thickness of each layer
+    k = UrbanCanyon.kW  # Thermal conductivity of each layer
+
+    # Initialize kb array with zeros
+    kb = np.zeros(n)
+
+    # Compute effective thermal conductivity for each layer except the last one
+    for j in range(n - 1):
+        kb[j] = (d[j] + d[j + 1]) / ((d[j] / k[j]) + (d[j + 1] / k[j + 1]))
+
+    # Set the last value of kb to the thermal conductivity of the last layer
+    kb[n - 1] = k[n - 1]
+
+    return kb
+
+def Zenith(d, t, nt):
+    """
+    Compute zenith angle in sine.
+
+    Parameters:
+    d  : int
+        Day of the year.
+    t  : float
+        Time in hours.
+    nt : int
+        Number of time steps.
+
+    Returns:
+    qz : numpy array
+        Zenith angle (in radians).
+    qs : numpy array
+        Another angle calculated based on zenith.
+    """
+
+    # Access latitude and longitude directly from UrbanCanyon class
+    phi = UrbanCanyon.phi  # Latitude (radians)
+    lam = UrbanCanyon.lam  # Longitude (radians)
+
+    dy = 365.25  # Number of days per year
+    dr = 170  # Day of the summer solstice
+    phR = 0.409  # Latitude of the Tropic of Cancer [rad]
+
+    Del = phR * np.cos(2 * np.pi * (d - dr) / dy)  # Solar declination angle
+    Omt = np.pi * t / 12 - lam  # Solar hour angle
+
+    a = np.sin(phi) * np.sin(Del) - np.cos(phi) * np.cos(Del) * np.cos(Omt)  # cos(qz)
+
+    # Ensure no negative values for `a`
+    a = np.clip(a, 0, None)
+
+    qz = np.arccos(a)  # Zenith angle
+
+    # Calculate qs, avoiding division by zero
+    sin_qz = np.sin(qz)
+    b = (np.cos(qz) * np.sin(phi) - np.sin(Del)) / (np.cos(Del) * np.maximum(sin_qz, 1e-8))
+
+    # Clip `b` to the valid range of `arccos` ([-1, 1]) to avoid invalid values
+    b = np.clip(b, -1, 1)
+
+    qs = np.arccos(b)
+
+    return qz, qs
+
+def WCdiff(inflow, outflow, WC0, D, K, dt):
+    """
+    Resolve 1D vertical water content diffusion process based on Richards' equation.
+
+    Parameters:
+    inflow : float
+        Inflow boundary condition (e.g., SWG, SWR).
+    outflow : float
+        Outflow boundary condition (e.g., KRe[-1], 0).
+    WC0 : numpy array
+        Initial profile of water content.
+    D : numpy array
+        Diffusion coefficient for each layer.
+    K : numpy array
+        Hydraulic conductivity for each layer.
+    dt : float
+        Time step used to resolve transport.
+
+    Returns:
+    WCt : numpy array
+        Final profile of water content.
+    DWG : numpy array
+        Water infiltration through the interface.
+    """
+
+    # Access number of layers and thickness from UrbanCanyon class
+    nL = UrbanCanyon.nL  # Number of discretized layers
+    dgG = UrbanCanyon.dgG  # Thickness of vegetated ground layers
+
+    # Initialize arrays
+    DWG = np.zeros(nL)  # Diffusion water content within layers
+    WCt = np.zeros(nL)  # Final profile of water content
+
+    # Water infiltration through layers
+    DWG[0] = 2.0 * D[0] * (WC0[0] - WC0[1]) / (dgG[0] + dgG[1]) + K[0]
+    DWG[-1] = outflow  # Last layer outflow condition
+
+    for j in range(1, nL - 1):
+        DWG[j] = 2.0 * D[j] * (WC0[j] - WC0[j + 1]) / (dgG[j] + dgG[j + 1]) + K[j]
+
+    # Compute water content diffusion
+    Sroot = np.zeros(nL)  # Root water uptake (modify if needed)
+
+    WCt[0] = WC0[0] + dt * (inflow - DWG[0] - Sroot[0]) / dgG[0]
+
+    for j2 in range(1, nL):
+        WCt[j2] = WC0[j2] + dt * (DWG[j2 - 1] - DWG[j2] - Sroot[j2]) / dgG[j2]
+
+    return WCt, DWG
+
+def TGF(g, Q, q, i):
+    """
+    Compute solid temperatures for walls, roads, and roofs.
+
+    Parameters:
+        g : numpy array
+            Green's function values.
+        Q : numpy array
+            Net input heat flux at the exposure surface.
+        q : numpy array
+            Heat flux at the inner (building) surface.
+        i : int
+            Current time step index.
+
+    Returns:
+        T : float
+            Computed temperature.
+        q1 : float
+            Intermediate heat flux value.
+    """
+
+    # Compute integral using trapezoidal rule
+    S1 = np.trapz(x=g[:i+1, 0], y=np.concatenate(([0], q[:i][::-1])))
+    S2 = np.trapz(x=g[:i+1, 1], y=np.concatenate(([0], Q[:i][::-1])))
+
+    # Compute q1 (intermediate heat flux)
+    q1 = (2.0 * (S2 - S1) + g[1, 1] * Q[i]) / g[1, 0]
+
+    S3 = np.trapz(x=g[:i+1, 1], y=np.concatenate(([0], q[:i][::-1])))
+    S4 = np.trapz(x=g[:i+1, 0], y=np.concatenate(([0], Q[:i][::-1])))
+
+    # Compute final temperature T
+    T = -0.5 * q1 * g[1, 1] + 0.5 * Q[i] * g[1, 0] + (S4 - S3)
+
+    return T, q1
+
+def Tdiscrete(dt, qW, GW, TW0):
+    """
+    Compute solid temperatures for walls, roofs, or roads over time.
+
+    Parameters:
+    dt : float
+        Time step [s].
+    qW : numpy array
+        Net heat flux at the wall/roof surface [W/m²].
+    GW : numpy array
+        Conductive heat flux between layers [W/m²].
+    TW0 : numpy array
+        Initial temperatures of the layers [°C].
+
+    Returns:
+    TW : numpy array
+        Updated temperature of the layers after one time step [°C].
+    """
+
+    # Access layer properties from UrbanCanyon
+    dW = UrbanCanyon.dW  # Thickness of each layer [m]
+    cW = UrbanCanyon.cW  # Heat capacity of each layer [J/kg/K]
+    nL = UrbanCanyon.nL  # Number of layers
+    nW = UrbanCanyon.nW  # Number of wall types
+
+    # Initialize temperature array
+    TW = np.zeros((1, nL, nW))
+
+    # Compute temperature for the first layer
+    for i in range(nW):
+        TW[0, 0, i] = TW0[0, 0, i] + dt * (qW[0, i] - GW[0, 0, i]) / (dW[0, i] * cW[0, i])
+
+    # Compute temperature for subsequent layers
+    for j in range(1, nL):
+        for i in range(nW):
+            TW[0, j, i] = TW0[0, j, i] + dt * (GW[0, j - 1, i] - GW[0, j, i]) / (dW[j, i] * cW[j, i])
+
+    return TW
+
+import numpy as np
+from Main import UrbanCanyon  # Import UrbanCanyon for global parameters
+
+def shortrad(opt, qz, qs, qcan, Sd, Sq):
+    """
+    Compute shortwave radiation budget for a street canyon.
+
+    Uses UrbanCanyon parameters to calculate radiation absorbed by
+    walls, ground, and roofs based on their albedo and view factors.
+
+    Parameters:
+        opt : int
+            Calculation method (1 for Kusaka, 2 for Masson).
+        qz : float
+            Zenith angle of the sun.
+        qs : float
+            Solar azimuth angle.
+        qcan : float
+            Canyon azimuth angle.
+        Sd : float
+            Direct solar radiation.
+        Sq : float
+            Diffuse solar radiation.
+
+    Returns:
+        SW : numpy array
+            Shortwave radiation for walls.
+        SG : numpy array
+            Shortwave radiation for ground.
+        SR : numpy array
+            Shortwave radiation for roofs.
+    """
+
+    # Access parameters from UrbanCanyon
+    w = UrbanCanyon.w  # Canyon width
+    h = UrbanCanyon.h  # Canyon height
+    aW = UrbanCanyon.aW  # Wall albedo
+    aWe = UrbanCanyon.aWe  # Effective wall albedo
+    aG = UrbanCanyon.aG  # Ground albedo
+    aGe = UrbanCanyon.aGe  # Effective ground albedo
+    aR = UrbanCanyon.aR  # Roof albedo
+    FGS = UrbanCanyon.sky_view_factors["FGS"]
+    FWW = UrbanCanyon.sky_view_factors["FWW"]
+    FGW = UrbanCanyon.sky_view_factors["FGW"]
+    FWG = UrbanCanyon.sky_view_factors["FWG"]
+    FWS = UrbanCanyon.sky_view_factors["FWS"]
+    nW = UrbanCanyon.nW  # Number of wall subdivisions
+    nG = UrbanCanyon.nG  # Number of ground subdivisions
+    nR = UrbanCanyon.nR  # Number of roof subdivisions
+
+    FG = FGS
+    FW = FWS
+
+    # Compute shadow length
+    qn = abs(qcan - qs)
+    lsh = h * np.tan(qz) * np.sin(qn)
+    lsh = min(lsh, w)  # Shadow limited by canyon width
+
+    # Initialize radiation arrays
+    SR = np.zeros(nR)
+    SW1 = np.zeros(nW)
+    SW2 = np.zeros(nW)
+    SG1 = np.zeros(nG)
+    SG2 = np.zeros(nG)
+
+    if opt == 1:  # Kusaka method
+        for j1 in range(nR):
+            SR[j1] = Sd * (1 - aR[j1]) + Sq * (1 - aR[j1])
+
+        for j2 in range(nW):
+            SW1[j2] = Sd * lsh * (1 - aW[j2]) / (2 * h) + Sq * FWS * (1 - aW[j2])
+            SW2[j2] = (Sd * (w - lsh) * aGe * FWG * (1 - aW[j2]) / w
+                       + Sq * FWG * (1 - aW[j2])
+                       + Sd * lsh * aW[j2] * FWW * (1 - aW[j2]) / (2 * h)
+                       + Sq * FWS * aW[j2] * FWW * (1 - aW[j2]))
+
+        for j3 in range(nG):
+            SG1[j3] = Sd * (w - lsh) * (1 - aG[j3]) / w + Sq * FGS * (1 - aG[j3])
+            SG2[j3] = (Sd * lsh * aWe * FGW * (1 - aG[j3]) / (2 * h)
+                       + Sq * FWS * aWe * FGW * (1 - aG[j3]))
+
+        SW = SW1 + SW2
+        SG = SG1 + SG2
+
+    elif opt == 2:  # Masson method
+        SR = Sd * (1 - aR) + Sq * (1 - aR)
+        q0 = np.arctan(w / h)
+
+        if qz > q0:
+            SWd = 0.5 * w * Sd / h
+            SGd = 0
+        else:
+            SWd = 0.5 * np.tan(qz) * np.sin(qn) * Sd
+            SGd = (1 - lsh / (w * np.sin(qn))) * np.sin(qn) * Sd
+
+        f = np.ones(nG)  # Ground fraction coefficient
+        RG0 = np.sum(f * (aG * SGd + aG * Sq), axis=0)
+        RW0 = aW * SWd + aW * Sq
+
+        x1 = (1 - FG) * FW * f * aG * aW
+        x2 = (1 - FG) * f * aG * (RW0 + FW * aW * RG0)
+        X1 = 1 - (1 - 2 * FW) * aW + np.sum(x1, axis=0)
+        X2 = np.sum(x2, axis=0)
+
+        MG = (RG0 + X2) / X1
+        MW = (RW0 + FW * aW * RG0) / X1
+
+        SG = (SGd * (1 - f * aG) + Sq * (1 - f * aG)
+              + (1 - f * aG) * (1 - FG) * MW)
+        SW = (SWd * (1 - aW) + Sq * (1 - aW)
+              + (1 - aW) * (1 - 2 * FW) * MW
+              + (1 - aW) * FW * MG)
+
+    return SW, SG, SR
+
+def Raerod(Ta, ua, Ts, u0=0):
+    """
+    Compute turbulent aerodynamic resistance.
+
+    Uses the analytical procedure from Louis (1979) and Mascart (1995).
+
+    Parameters:
+        Ta : float
+            Absolute virtual potential temperature in Kelvin (air temperature).
+        ua : float
+            Wind velocity [m/s].
+        Ts : float
+            Surface temperature in Kelvin.
+        u0 : float, optional
+            Wind velocity at reference height (default is 0 for roof).
+
+    Returns:
+        Res : float
+            Aerodynamic resistance [s/m].
+    """
+
+    # Access parameters from UrbanCanyon
+    z1 = UrbanCanyon.Za   # Measurement height (reference height)
+    z2 = UrbanCanyon.Zr   # Roughness height (roof or canyon)
+    z0m = UrbanCanyon.ZmR if u0 == 0 else UrbanCanyon.Zmc  # Momentum roughness length
+    z0h = UrbanCanyon.ZhR if u0 == 0 else UrbanCanyon.Zhc  # Heat roughness length
+
+    # Constants
+    g = 9.81           # Gravity constant [m/s²]
+    k = 0.4            # Von-Karman constant
+    b = 9.4
+    B = 9.4 / 2
+    R = 0.74
+    m = np.log(z0m / z0h)
+    U = ua - u0
+    z = z1 - z2
+
+    # Temperature difference and average
+    dT = Ta - Ts
+    Tm = (Ta + Ts) / 2
+
+    # Neutral drag coefficient
+    a2 = k ** 2 / (np.log(z / z0m) ** 2)
+    Ri = g * z * dT / (Tm * U ** 2)  # Richardson number
+    C = np.log(z / z0m) / np.log(z / z0h)
+
+    # Stability functions
+    Chs = 3.2165 + 4.3431 * m + 0.536 * m ** 2 - 0.0781 * m ** 3
+    ph = 0.5802 - 0.1571 * m + 0.0327 * m ** 2 - 0.0026 * m ** 3
+    Ch = Chs * a2 * b * C * (z / z0h) ** ph
+
+    # Compute stability-adjusted heat flux
+    if Ri <= 0:
+        Fh = C * (1 - b * Ri / (1 + Ch * np.sqrt(abs(Ri))))
+    else:
+        Fh = C / (1 + B * Ri) ** 2
+
+    # Aerodynamic resistance
+    Res = R / (U * a2 * Fh)
+
+    return Res
+
+def qsat(T, P):
+    """
+    Compute saturated specific humidity for given T and P
+    using the Clausius-Clapeyron Equation.
+
+    Parameters:
+        T : numpy array
+            Temperature [K].
+        P : numpy array
+            Atmospheric pressure [Pa].
+
+    Returns:
+        qs : numpy array
+            Saturated specific humidity.
+    """
+
+    # Access constants from Constants
+    Lv = Constants.Lv  # Latent heat of vaporization [J/kg]
+    Rv = Constants.Rv  # Gas constant for vapor [J/kg/K]
+    Rd = Constants.Rd  # Gas constant for dry air [J/kg/K]
+
+    # Reference conditions
+    Tref = 298  # Reference temperature @ 25°C in Kelvin
+    eref = 3167  # Reference saturated vapor pressure at Tref [Pa]
+
+    # Clausius-Clapeyron equation for saturated vapor pressure
+    es = eref * np.exp(Lv * (T - Tref) / (Rv * T * Tref))
+
+    # Compute specific humidity
+    rs = (Rd / Rv) * es / (P - es)
+    qs = rs / (rs + 1)
+
+    return qs
+
+def longrad(opt, Ld, TW, TWe, TG, TGe, TR, eW, eWe, eG, eGe, eR,
+            FGS, FWW, FGW, FWG, FWS, nW, nG, nR):
+    """
+    Computes longwave radiation based on the selected option.
+
+    Parameters:
+    opt : int       - Radiation model option (1 or 2)
+    Ld  : float     - Incoming longwave radiation
+    TW  : array     - Wall temperature
+    TWe : float     - Effective wall temperature
+    TG  : array     - Ground temperature
+    TGe : float     - Effective ground temperature
+    TR  : array     - Roof temperature
+    eW  : array     - Wall emissivity
+    eWe : float     - Effective wall emissivity
+    eG  : array     - Ground emissivity
+    eGe : float     - Effective ground emissivity
+    eR  : array     - Roof emissivity
+    FGS, FWW, FGW, FWG, FWS : float - View factors
+    nW, nG, nR : int - Number of wall, ground, and roof surfaces
+
+    Returns:
+    Lw, Lg, Lr : tuple - Longwave radiation for walls, ground, and roof
+    """
+
+    # Stefan-Boltzmann constant
+    ss = 5.67e-8  # [J/s/m^2/K^4]
+
+    # Initialize radiation components
+    Lw = np.zeros(nW)
+    Lg = np.zeros(nG)
+    Lr = np.zeros(nR)
+
+    if opt == 1:
+        # Compute longwave radiation using option 1
+        Lr = eR * (Ld - ss * TR**4)  # Roof longwave radiation
+
+        LW1 = eW * (Ld * FWS + eGe * ss * TGe**4 * FWG + eW * ss * TW**4 * FWW - ss * TW**4)
+        LW2 = eW * ((1 - eGe) * Ld * FGS * FWG +
+                    2 * (1 - eGe) * eW * ss * TW**4 * FGW * FWG +
+                    (1 - eW) * Ld * FWS * FWW +
+                    (1 - eW) * eGe * ss * TGe**4 * FWG * FWW +
+                    eW * (1 - eW) * ss * TW**4 * FWW**2)
+
+        Lw = LW1 + LW2  # Total wall longwave radiation
+
+        LG1 = eG * (Ld * FGS + 2 * eWe * ss * TWe**4 * FGW - ss * TG**4)
+        LG2 = 2 * eG * ((1 - eWe) * Ld * FWS * FGW +
+                        (1 - eWe) * eG * ss * TG**4 * FWG * FGW +
+                        eWe * (1 - eWe) * ss * TWe**4 * FWW * FGW)
+
+        Lg = LG1 + LG2  # Total ground longwave radiation
+
+    elif opt == 2:
+        # Compute longwave radiation using option 2
+        FG = FGS
+        FW = FWS
+        temp_sum = 0
+
+        for j in range(nG):
+            Lg[j] = (eG[j] * FG * Ld - eG[j] * ss * TG[j]**4 +
+                     eG[j] * eW * (1 - FG) * ss * TW[0]**4 +
+                     eG[j] * (1 - eW) * (1 - FG) * FW * Ld +
+                     eG[j] * eW * (1 - eW) * (1 - FG) * (1 - 2 * FW) * ss * TW[0]**4 +
+                     eG[j] * (1 - eW) * (1 - FG) * FW * ss * eG[j] * TG[j]**4)
+
+            temp_sum += (eW * FW * ss * eG[j] * TG[j]**4 +
+                         eW * (1 - eG[j]) * FW * FG * Ld +
+                         eW**2 * (1 - eG[j]) * FW * (1 - FG) * ss * TW[0]**4 +
+                         eW * (1 - eW) * FW * (1 - 2 * FW) * ss * eG[j] * TG[j]**4)
+
+        Lw = (temp_sum + eW * FW * Ld - eW * ss * TW[0]**4 +
+              eW**2 * (1 - 2 * FW) * ss * TW[0]**4 +
+              eW * (1 - eW) * FW * (1 - 2 * FW) * Ld +
+              eW**2 * (1 - eW) * (1 - 2 * FW)**2 * ss * TW[0]**4)
+
+        Lr = eR * (Ld - ss * TR[0]**4)  # Roof longwave radiation
+
+    return Lw, Lg, Lr
+
+def Green(Fo, d, k, a, t, n, icr):
+    #------------------------------------------------------------------------
+    #  Purpose:
+    #     compute Green's function for solid layers
+    #
+    #  Variable Description:
+    #     Fo    - Fourier number
+    #     d     - thickness
+    #     k,a   - thermal conductivity and diffusivity
+    #     t     - time
+    #------------------------------------------------------------------------
+#t= tl, a= alR or alW or alG, k = kR or kG or kW, d = dR or dG or dW
+
+    Fo_cr = 1 / np.pi / np.sqrt(2)  # characteristic Fourier number
+    dt = t[1] - t[0]                # time step, in s
+    t_cr = 300 * icr                # critical nondimensional time (in s)
+    x = np.array([0, d])
+
+    if t[-1] < t_cr:
+        nt = len(t)
+    else:
+        nt = int(np.ceil(t_cr / dt))
+
+    g = np.zeros((len(t), 2))
+
+    I1 = np.where((Fo[:nt] <= Fo_cr) & (Fo[:nt] != 0))[0]  # indices for small time solution
+    I2 = np.where((Fo[:nt] > Fo_cr) & (Fo[:nt] != 0))[0]   # indices for large time solution
+
+    if len(I1) > 0:
+        # Compute small time solution
+        R = np.arange(-int(np.floor((n - 1) / 2)), int(np.ceil((n - 1) / 2)) + 1)
+        xx, tt, nn = np.meshgrid(x, t[I1], R, indexing='ij')
+        K = (np.sqrt(a * tt / np.pi) * np.exp(-(xx - 2 * nn * d) ** 2 / (4 * a * tt)) -
+             np.abs(xx - 2 * nn * d) / 2 * erfc(np.abs(xx - 2 * nn * d) / (2 * np.sqrt(a * tt))))
+        g[I1, :] = 2 / k * np.sum(K, axis=2)
+
+    if len(I2) > 0:
+        # Solution based on eigenfunction expansion
+        R = np.arange(1, n + 1)
+        xx, tt, nn = np.meshgrid(x, t[I2], R, indexing='ij')
+        K = (np.exp(-a * (nn * np.pi / d) ** 2 * tt) / nn ** 2 * np.cos(nn * np.pi * xx / d))
+        xx, tt = np.meshgrid(x, t[I2], indexing='ij')
+        g[I2, :] = (a * tt / k / d +
+                    d / (6 * k) * (3 * (1 - xx / d) ** 2 - 1) -
+                    2 * d / np.pi ** 2 / k * np.sum(K, axis=2))
+
+    return g
+
+def DKeff(d, W, Ws, Ks, b, Hs, nL):
+
+ #------------------------------------------------------------------------
+    #  Purpose:
+    #     compute effective hydraulic diffusivity and conductivity
+    #
+    #  Synopsis:
+    #     [De,Ke]=DKeff(d,W,Ws,Wr,Ks,nL,n,a)
+    #
+    #  Variable Description:
+    #     n,a    - fitting parameters for unsaturated soil
+    #     Ws,Wr  - saturated/residual soil water content
+    #     Ks     - saturated soil conductivity
+    #------------------------------------------------------------------------
+
+    D  = np.zeros(shape=(UrbanCanyon.nL))
+    K  = np.zeros(shape=(UrbanCanyon.nL))
+    De = np.zeros(shape=(UrbanCanyon.nL))
+    Ke = np.zeros(shape=(UrbanCanyon.nL))
+
+    for j in range(UrbanCanyon.nL):
+        K[j] = UrbanCanyon.Ks * ( W[j] / UrbanCanyon.Ws )**(2*b+3)
+        D[j] = b  * UrbanCanyon.Ks * Hs * ( W[j]/UrbanCanyon.Ws )**(b+2)/UrbanCanyon.Ws
+
+    for j in range(UrbanCanyon.nL-1):
+        Ke[j] = ( UrbanCanyon.dG[j] + UrbanCanyon.dG[j+1] ) / ( ( UrbanCanyon.dG[j] / K[j] ) + ( UrbanCanyon.dG[j+1] / K[j+1] ))
+        De[j] = ( UrbanCanyon.dG[j] + UrbanCanyon.dG[j+1] ) / ( ( UrbanCanyon.dG[j] / D[j] ) + ( UrbanCanyon.dG[j+1] / D[j+1] ))
+
+    Ke[-1] = K[-1]
+    De[-1] = D[-1]
+
+    return De, Ke
+
+def Conduct(kW, nL, dW, TB, TW, nW):
+    """
+    Purpose:
+        Compute conductive heat through solids.
+
+    Parameters:
+        kW : numpy array
+            Thermal conductivity array.
+        nL : int
+            Number of layers.
+        dW : numpy array
+            Layer thickness array.
+        TB : float
+            Temperature inside the building.
+        TW : numpy array
+            Temperature array.
+        nW : int
+            Number of walls (or sections).
+
+    Returns:
+        GW : numpy array
+            Conductive heat through each layer and section.
+    """
+
+    # Initialize the GW array with zeros
+    kW = UrbanCanyon.kW
+    nL = UrbanCanyon.nL
+    dW = UrbanCanyon.dW
+    TB = UrbanCanyon.TB  # Ensure TB is in Kelvin
+    nW = UrbanCanyon.nW
+
+    # Initialize GW array
+    GW = np.zeros((1, nL, nW))
+
+    # Compute conductive heat for the outermost layer
+    GW[0, nL-1, :] = 2 * kW[nL-1, :] * (TW[0, nL-1, :] - TB) / dW[nL-1, :]
+
+    # Compute conductive heat for the rest of the layers
+    for j in range(nL-1):
+        GW[0, j, :] = 2 * kW[j, :] * (TW[0, j, :] - TW[0, j+1, :]) / (dW[j, :] + dW[j+1, :])
+
+    return GW
+
+def arrays(nt):
+    nt = UrbanCanyon.nt     # Total time steps
+    nW = UrbanCanyon.nW     # Number of wall facets
+    nG = UrbanCanyon.nG     # Number of ground facets
+    nR = UrbanCanyon.nR     # Number of roof facets
+    nRL = UrbanCanyon.nRL   # Roof layers
+    nL = UrbanCanyon.nL     # Soil layers
+    Ws = UrbanCanyon.Ws     # Soil moisture parameter
+    dwR = UrbanCanyon.dwR   # Water depth for roof
+    dwG = UrbanCanyon.dwG   # Water depth for ground
+
+    # =================================================================
+    # Radiation
+    SR    = np.zeros(shape=(nt,UrbanCanyon.nR))   # W/m2 - net shortwave on roof
+    SG    = np.zeros(shape=(nt,UrbanCanyon.nG))   # W/m2 - net shortwave on ground
+    SW    = np.zeros(shape=(nt,UrbanCanyon.nW))   # W/m2 - net shortwave on wall
+    SWe = np.zeros(nt)  # Average shortwave radiation at walls
+    LWe = np.zeros(nt)  # Average longwave radiation at walls
+
+    # =================================================================
+    # Energy balance components
+    QW = np.zeros(shape=(nt,UrbanCanyon.nW))          # net heat flux at the walls [W/m2]
+    QG = np.zeros(shape=(nt,UrbanCanyon.nG))          # net heat flux at the ground [W/m2]
+    QR = np.zeros(shape=(nt,UrbanCanyon.nR))          # net heat flux at the roof [W/m2]
+    LR = np.zeros(shape=(nt,UrbanCanyon.nR))          # Longwave radiation at the roof
+    LW = np.zeros(shape=(nt,UrbanCanyon.nW))          # Longwave radiation at the wall
+    LG = np.zeros(shape=(nt,UrbanCanyon.nG))          # Longwave radiation at the ground
+    HW = np.zeros(shape=(nt,UrbanCanyon.nW))          # Sensible heat flux at the walls
+    HG = np.zeros(shape=(nt,UrbanCanyon.nG))          # Sensible heat flux at the ground
+    HR = np.zeros(shape=(nt,UrbanCanyon.nR))          # Sensible heat flux at the roof
+    LEC = np.zeros(nt)                    # Latent heat flux canyon
+    LEG = np.zeros(shape=(nt,UrbanCanyon.nG))         # Latent heat flux at the ground surface
+    LER = np.zeros(shape=(nt,UrbanCanyon.nR))         # Latent heat flux at the roof
+    qR1 = np.zeros(shape=(nt,UrbanCanyon.nR))         # Heat flux at the inner surface
+    Hcan   = np.zeros(nt)                           # Sensible heat flux above roof
+    RnW = np.zeros(shape=(nt,UrbanCanyon.nW))         # Net available radiation on wall
+    RnG = np.zeros(shape=(nt,UrbanCanyon.nG))         # Net available radiation on ground
+    RnR = np.zeros(shape=(nt,UrbanCanyon.nR))         # Net available radiation on roof
+    ReW = np.zeros(nt)                    # Average across wall facets - net available radiation
+    ReG = np.zeros(nt)                    # Average across ground facets - net available radiation
+    ReR = np.zeros(nt)                    # Average across roof facets - net available radiation
+    HWe = np.zeros(nt)                    # Average across wall facets - sensible heat flux
+    HGe = np.zeros(nt)                    # Average across ground wall - sensible heat flux
+    HRe = np.zeros(nt)                    # Average across roof facets - sensible heat flux
+    LEGe = np.zeros(nt)                   # Average across ground facets - latent heat flux
+    LERe = np.zeros(nt)                   # Average across roof facets - latent heat flux
+    RW = np.zeros((nt, 1))  # Net radiation on walls
+    RG = np.zeros((nt, 1))  # Net radiation on ground
+    RR = np.zeros((nt, UrbanCanyon.nR))  # Net radiation on roof
+    Rcan = np.zeros(nt)  # Net radiation in canyon
+
+    # =================================================================
+    # Green's functions
+    FoW = np.zeros(shape=(nt,UrbanCanyon.nW))
+    FoR = np.zeros(shape=(nt,UrbanCanyon.nR))
+    gW  = np.zeros(shape=(nt,2,UrbanCanyon.nW))
+    gR  = np.zeros(shape=(nt,2,UrbanCanyon.nR))
+    gG  = np.zeros(shape=(nt,UrbanCanyon.nG))
+
+    # =================================================================
+    # Temperature
+    TW              = np.zeros(shape=(nt,UrbanCanyon.nW))    # [K] T wall
+    TG              = np.zeros(shape=(nt,UrbanCanyon.nG))    # [K] T ground
+    TR              = np.zeros(shape=(nt,UrbanCanyon.nR))    # [K] T roof
+    Tcan            = np.zeros(nt)                         # [K] T canyon
+    TWe             = np.zeros(nt)                         # Average temperature across wall facets
+    TGe             = np.zeros(nt)                         # Average temperature across ground facets
+    TRe             = np.zeros(nt)                         # Average temperature across roof facets
+    TRm = np.zeros((nt, UrbanCanyon.nR, UrbanCanyon.nRL - 1))  # Inner surface temperature of roofs
+    TWd = np.zeros((nt, 3, UrbanCanyon.nW))  # Temperature for walls
+    GW = np.zeros((nt, 3, UrbanCanyon.nW))  # Ground wall temperature
+    # =================================================================
+    # Hydrology terms
+    WGv   = UrbanCanyon.Ws * np.ones(shape=(nt,UrbanCanyon.nL))
+    WRv   = UrbanCanyon.Ws * np.ones(nt)
+    delWR = UrbanCanyon.dwR * np.ones(shape=(nt,max(1,UrbanCanyon.nR-1)))
+    delWG = UrbanCanyon.dwG * np.ones(shape=(nt,UrbanCanyon.nG-1))
+    WRi   = np.ones(shape=(nt,max(1,UrbanCanyon.nR-1)))
+    WGi   = np.ones(shape=(nt,UrbanCanyon.nG-1))
+    qcan  = np.zeros(nt)
+    qW1   = np.zeros(shape=(nt,UrbanCanyon.nW))
+    SWG   = np.zeros(shape=(nt,UrbanCanyon.nG))
+    SWR   = np.zeros(shape=(nt,UrbanCanyon.nR))
+    DGe   = np.zeros(shape=(nt,UrbanCanyon.nL))
+    KGe   = np.zeros(shape=(nt,UrbanCanyon.nL))
+    RoR   = np.zeros(shape=(nt,UrbanCanyon.nR))
+    RoG   = np.zeros(shape=(nt,UrbanCanyon.nG))
+    qsG    = np.zeros(shape=(nt,UrbanCanyon.nG))
+    DRe = np.zeros((nt, UrbanCanyon.nL // 2))  # Hydraulic diffusivity for the roof
+    KRe = np.zeros((nt, UrbanCanyon.nL // 2))  # Hydraulic conductivity for the roof
+    WG_nd = np.zeros((nt, UrbanCanyon.nL))  # Nondimensionalized soil moisture at the ground
+    WR_nd = np.zeros((nt, 1))  # Nondimensionalized soil moisture at the roof
+    DWG = np.zeros((nt, UrbanCanyon.nL))  # Soil infiltration
+    # =================================================================
+    # Runoff & Irrigation
+    RsR = np.zeros((nt, 1))  # Resistance term related to roof runoff
+    QOUT = np.zeros(nt)  # Outflow heat flux
+    QIN = np.zeros(nt)  # Inflow heat flux
+    IRRI = np.zeros(nt)  # Irrigation
+    # =================================================================
+    # Atmospheric terms
+    Ur     = np.zeros(nt)
+    Us     = np.zeros(nt)
+    qsG = np.zeros(shape=(nt,UrbanCanyon.nG))
+    qsR = np.zeros(shape=(nt,UrbanCanyon.nR))
+
+    return (SR, SG, SW, SWe, LWe,QW, QG, QR, LR, LW, LG, HW, HG, HR, LEC, LEG, LER, qR1, Hcan,RnW, RnG, RnR, ReW, ReG, ReR, HWe, HGe, HRe, LEGe, LERe, RW, RG, RR, Rcan,FoW, FoR, gW, gR, gG,TW, TG, TR, Tcan, TWe, TGe, TRe, TRm, TWd, GW,
+WGv, WRv, delWR, delWG, WRi, WGi, qcan, qW1, SWG, SWR, DGe, KGe, RoR, RoG,qsG, DRe, KRe, WG_nd, WR_nd, DWG,RsR, QOUT, QIN, IRRI,Ur, Us, qsG, qsR)
