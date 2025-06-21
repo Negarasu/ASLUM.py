@@ -199,7 +199,7 @@ A collection of example scripts and notebooks demonstrating various features of 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
 
 ## Authors
-**Negar Rahmatollahi [Negarasu](https://github.com/Negarasu), Ting Sun, Zhihua Wang, Yihang Wang**.
+**Negar Rahmatollahi [Negarasu](https://github.com/Negarasu),Zhihua Wang,Yihang Wang,Ting Sun**.
 
 ## Acknowledgments
 
