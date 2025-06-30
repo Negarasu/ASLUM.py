@@ -38,6 +38,7 @@ ASLUM.py/                # Root directory (main project folder)
   ```
 
 ### Requirements for Installing Packages
+The code has been tested and may require environment-specific adjustments by users.
 Before installing ASLUM.py, ensure you meet the following requirements:
 
 - **Python**: Make sure you have Python installed and available from the command line. You can check this by running:
