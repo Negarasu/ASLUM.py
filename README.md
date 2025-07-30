@@ -1,6 +1,6 @@
 
 #
-# ASLUM-Py - Urban Climate Analysis
+# ASLUM-Py 
 ## Overview
 This Python package is designed for comprehensive urban climate data analysis - ASLUM.py. It provides tools to process, analyze, and visualize climate data from various sources. This package is ideal for climate researchers, environmental scientists, and data analysts who are working on climate change studies.
 
