@@ -211,7 +211,8 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) f
 - **Documentation and Tutorials**: Special thanks to the authors of comprehensive Python and data science documentation and tutorials that helped shape this project.
 - **Support and Feedback**: Heartfelt appreciation to all users who have provided feedback, reported issues, and suggested improvements, making this project better for everyone.
 - **Arizona State University**: Special thanks to Arizona State University for their support and resources that have been invaluable to this project's development.
-- **Funding and Support**: Acknowledgment to any institutions, grants, or organizations that have supported the development and maintenance of this project.
+- **Funding and Support**: Acknowledgment to any institutions, grants, or organizations that have supported the development and maintenance of this project - this study is supported by the U. S. National Science Foundation (NSF) and Arizona Board of Regents (ABOR) under the project “Smart Tree Watering 440 
+in Arizona’s Urban Environment”. 
 
 ## Contact
 For any questions, please contact zhwang@asu.edu and nrahmato@asu.edu
